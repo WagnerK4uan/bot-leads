@@ -13,6 +13,8 @@ export const CAMPO = {
   virada: 'Tem como trazer e fazer virada de chave?',
   metodo: 'Método de importação',
   motivo: 'Motivo',
+  assumida: 'Assumida em',
+  tempo: 'Tempo até aprovação',
 };
 
 export function embedInicial({ cliente, sistema, acesso, dados, obs, solicitanteId }) {
@@ -57,6 +59,12 @@ export function comStatus(embed, key) {
 export function solicitanteDe(embed) {
   const f = embed.fields?.find((x) => x.name === CAMPO.solicitante);
   return f?.value.match(/<@!?(\d+)>/)?.[1] ?? null;
+}
+
+export function assumidaEm(embed) {
+  const f = embed.fields?.find((x) => x.name === CAMPO.assumida);
+  const unix = f?.value.match(/<t:(\d+)/)?.[1];
+  return unix ? new Date(Number(unix) * 1000) : null;
 }
 
 export function botoes(status) {
