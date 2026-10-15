@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<title>Tutorial</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; width: 900px; height: 520px; overflow: hidden; background: #313338; color: #dbdee1;
+    font: 15px/1.4 "gg sans", "Segoe UI", system-ui, sans-serif; }
+  section { display: none; height: 520px; padding: 28px 36px; position: relative; }
+  section.on { display: block; }
+  .step { position: absolute; top: 18px; right: 24px; background: #5865f2; color: #fff; font-weight: 700;
+    border-radius: 999px; padding: 4px 14px; font-size: 13px; letter-spacing: .3px; }
+  .hint { position: absolute; border: 3px solid #f0b232; border-radius: 10px; box-shadow: 0 0 0 4px rgba(240,178,50,.18); }
+  .ring { outline: 3px solid #f0b232; outline-offset: 4px; border-radius: 6px; }
+  .step { z-index: 2; }
+  .note { z-index: 2; }
+  .note { position: absolute; background: #f0b232; color: #1e1f22; font-weight: 700; padding: 6px 10px; border-radius: 6px; font-size: 13px; }
+  .muted { color: #949ba4; }
+  .chan { color: #949ba4; font-weight: 600; font-size: 16px; margin-bottom: 14px; }
+  .msg { display: flex; gap: 14px; margin: 12px 0; }
+  .av { width: 40px; height: 40px; border-radius: 50%; flex: none; display: grid; place-items: center; font-weight: 700; color: #fff; }
+  .name { font-weight: 600; color: #f2f3f5; } .bot { background: #5865f2; color: #fff; font-size: 10px; padding: 1px 4px; border-radius: 3px; margin-left: 4px; vertical-align: 2px; }
+  .input { position: absolute; left: 36px; right: 36px; bottom: 28px; background: #383a40; border-radius: 8px; padding: 13px 16px; font-size: 16px; }
+  .popup { position: absolute; left: 36px; right: 36px; bottom: 82px; background: #2b2d31; border-radius: 8px; padding: 10px; }
+  .cmd { display: flex; gap: 12px; align-items: center; padding: 10px; border-radius: 6px; }
+  .cmd.sel { background: #404249; }
+  .ico { width: 32px; height: 32px; border-radius: 50%; background: #5865f2; display: grid; place-items: center; color: #fff; font-weight: 700; }
+  .modal { width: 470px; margin: 0 auto; background: #313338; border-radius: 10px; padding: 18px 20px; box-shadow: 0 8px 40px rgba(0,0,0,.6); outline: 1px solid #1e1f22; }
+  .modal h3 { margin: 0 0 12px; color: #f2f3f5; font-size: 18px; }
+  .lbl { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #b5bac1; margin: 10px 0 4px; }
+  .field { background: #1e1f22; border-radius: 4px; padding: 8px 10px; color: #dbdee1; font-size: 14px; }
+  .chips span { display: inline-block; background: #5865f2; color: #fff; border-radius: 4px; padding: 2px 8px; margin: 0 4px 4px 0; font-size: 13px; }
+  .btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+  .b { border-radius: 4px; padding: 7px 16px; font-weight: 600; font-size: 14px; color: #fff; }
+  .b.p { background: #5865f2; } .b.g { background: #248046; } .b.r { background: #da373c; } .b.s { background: #4e5058; }
+  .bg-dim { position: absolute; inset: 0; background: rgba(0,0,0,.55); }
+  .layer { position: relative; }
+  .embed { background: #2b2d31; border-left: 4px solid #f1c40f; border-radius: 4px; padding: 10px 14px; max-width: 560px; margin-top: 6px; }
+  .embed h4 { margin: 0 0 8px; color: #f2f3f5; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
+  .k { font-weight: 700; color: #f2f3f5; font-size: 13px; } .v { font-size: 14px; }
+  .row { display: flex; gap: 8px; margin-top: 8px; }
+  .forum { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .post { background: #2b2d31; border-radius: 8px; padding: 12px 16px; }
+  .post .t { color: #f2f3f5; font-weight: 600; font-size: 16px; }
+  .tag { display: inline-block; background: #3f4147; border-radius: 999px; padding: 2px 10px; font-size: 12px; margin: 6px 6px 0 0; }
+  .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+  .lg { background: #2b2d31; border-radius: 10px; padding: 14px 16px; }
+  .lg .t { font-weight: 700; color: #f2f3f5; font-size: 17px; }
+</style>
+
+<!-- 1: digitar /validacao -->
+<section id="s1">
+  <div class="step">PASSO 1</div>
+  <div class="chan"># comercial</div>
+  <div class="msg"><div class="av" style="background:#2ecc71">A</div><div><span class="name">Ana (Comercial)</span> <span class="muted">Hoje às 17:20</span><div>Tenho um lead na linha, vou abrir a validação 👇</div></div></div>
+  <div class="popup">
+    <div class="muted" style="font-size:12px;font-weight:700;padding:4px 10px">COMANDOS QUE CORRESPONDEM A <b>validacao</b></div>
+    <div class="cmd sel"><div class="ico">V</div><div><b style="color:#f2f3f5">/validacao</b><div class="muted" style="font-size:13px">Abre um pedido de validação de importação para um lead</div></div><div class="muted" style="margin-left:auto">Bot Validação</div></div>
+  </div>
+  <div class="input">/validacao<span style="opacity:.6">|</span></div>
+  <div class="hint" style="left:30px;right:30px;bottom:22px;height:52px"></div>
+  <div class="note" style="left:620px;bottom:150px">Digite /validacao e aperte Enter</div>
+</section>
+
+<!-- 2: formulário -->
+<section id="s2">
+  <div class="step">PASSO 2</div>
+  <div class="bg-dim"></div>
+  <div class="layer">
+    <div class="modal">
+      <h3>Nova validação de importação</h3>
+      <div class="lbl">Cliente</div><div class="field">Juliana Modas</div>
+      <div class="lbl">Sistema antigo do cliente</div><div class="field">Clipp Pro</div>
+      <div class="lbl">Acesso ao PC do cliente</div><div class="field">AnyDesk 1 760 828 359</div>
+      <div class="lbl">Dados para importar</div><div class="field chips"><span>Clientes</span><span>Fornecedores</span></div>
+      <div class="lbl">Observações (opcional)</div><div class="field muted">Cliente em ligação agora</div>
+      <div class="btns"><span class="b s">Cancelar</span><span class="b p ring">Enviar</span></div>
+    </div>
+  </div>
+  <div class="note" style="left:700px;top:180px">TeamViewer?<br>coloque a senha</div>
+</section>
+
+<!-- 3: post criado -->
+<section id="s3">
+  <div class="step">PASSO 3</div>
+  <div class="chan">💬 validacoes  ›  Juliana Modas — Clipp Pro</div>
+  <div class="msg"><div class="av" style="background:#5865f2">V</div><div style="flex:1">
+    <span class="name">Bot Validação</span><span class="bot">APP</span>
+    <div><span style="background:#3c4270;color:#c9cdfb;border-radius:3px;padding:0 2px">@Importação</span> nova validação aberta por <span style="background:#3c4270;color:#c9cdfb;border-radius:3px;padding:0 2px">@Ana</span>.</div>
+    <div class="embed">
+      <h4>📋 Juliana Modas</h4>
+      <div class="grid">
+        <div><div class="k">Cliente</div><div class="v">Juliana Modas</div></div>
+        <div><div class="k">Sistema</div><div class="v">Clipp Pro</div></div>
+        <div style="grid-column:span 2"><div class="k">Acesso</div><div class="v">AnyDesk 1 760 828 359</div></div>
+        <div style="grid-column:span 2"><div class="k">Dados para importar</div><div class="v">✅ Clientes<br>✅ Fornecedores</div></div>
+        <div><div class="k">Solicitante (Comercial)</div><div class="v">@Ana</div></div>
+        <div><div class="k">Status</div><div class="v">🟡 Aguardando validação</div></div>
+      </div>
+    </div>
+    <div class="row" style="padding-top:4px"><span class="b s">🙋 Assumir</span><span class="b g">✅ Aprovar</span><span class="b p">❓ Pedir info</span><span class="b r">⛔ Reprovar</span></div>
+    <div class="muted" style="margin-top:8px;font-size:13px">↑ botões usados pelo time de Importação</div>
+  </div></div>
+  <div class="note" style="left:660px;top:120px">Tudo do cliente fica<br>dentro deste post</div>
+</section>
+
+<!-- 4: importação valida -->
+<section id="s4">
+  <div class="step">PASSO 4</div>
+  <div class="chan">💬 validacoes  ›  Juliana Modas — Clipp Pro</div>
+  <div class="msg"><div class="av" style="background:#5865f2">V</div><div>
+    <span class="name">Bot Validação</span><span class="bot">APP</span>
+    <div>🙋 <b>@Gabriel</b> assumiu esta validação.</div></div></div>
+  <div class="msg"><div class="av" style="background:#3498db">G</div><div>
+    <span class="name">Gabriel (Importação)</span> <span class="muted">Hoje às 17:43</span>
+    <div>Conectando no AnyDesk 👍</div></div></div>
+  <div class="msg"><div class="av" style="background:#5865f2">V</div><div style="flex:1">
+    <span class="name">Bot Validação</span><span class="bot">APP</span>
+    <div><span style="background:#3c4270;color:#c9cdfb;border-radius:3px;padding:0 2px">@Ana</span> ✅ <b>Validação aprovada</b> por @Gabriel.</div>
+    <div class="embed" style="border-color:#2ecc71">
+      <div class="grid">
+        <div><div class="k">Tem como trazer e fazer virada de chave?</div><div class="v">Sim</div></div>
+        <div><div class="k">Status</div><div class="v">🟢 Aprovado</div></div>
+        <div style="grid-column:span 2"><div class="k">Método de importação</div><div class="v">Backup gerado no sistema do cliente</div></div>
+      </div>
+    </div>
+    <div style="margin-top:6px">Pode subir o ticket de importação.</div>
+  </div></div>
+  <div class="note" style="left:650px;top:300px">Só suba o ticket<br>com 🟢 Aprovado</div>
+</section>
+
+<!-- 5: legenda -->
+<section id="s5">
+  <div class="step">STATUS</div>
+  <div style="font-size:22px;font-weight:700;color:#f2f3f5">Como ler o fórum #validacoes</div>
+  <div class="muted">Cada post mostra o status como tag. Filtre por tag no topo do fórum.</div>
+  <div class="legend">
+    <div class="lg"><div class="t">🟡 Aguardando validação</div><div class="muted">Ninguém da Importação pegou ainda.</div></div>
+    <div class="lg"><div class="t">🔵 Em análise</div><div class="muted">Alguém assumiu e está acessando o cliente.</div></div>
+    <div class="lg"><div class="t">🟠 Pendente de info</div><div class="muted">Comercial precisa responder no post.</div></div>
+    <div class="lg"><div class="t">🟢 Aprovado</div><div class="muted">Pode subir o ticket de importação.</div></div>
+    <div class="lg"><div class="t">🔴 Reprovado</div><div class="muted">Não suba ticket. Veja o motivo.</div></div>
+    <div class="lg"><div class="t">⏰ Lembrete automático</div><div class="muted">Posts parados há 2 h úteis são cobrados.</div></div>
+  </div>
+</section>
+
+<script>
+  const n = (location.hash || '#1').slice(1);
+  document.getElementById('s' + n).classList.add('on');
+</script>
