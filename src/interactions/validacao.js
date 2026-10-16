@@ -131,10 +131,11 @@ export async function onModal(interaction) {
     const virada = f.getStringSelectValues('virada')[0];
     const metodo = f.getTextInputValue('metodo').trim();
     const obs = f.getTextInputValue('obs')?.trim();
-    const inicio = assumidaEm((interaction.message ?? (await starterDe(thread))).embeds[0]);
-    const tempo = inicio ? `${Math.round((Date.now() - inicio.getTime()) / 60000)} min` : null;
+    const inicio = assumidaEm((interaction.message ?? (await starterDe(thread))).embeds[0]) ?? new Date();
+    const tempo = `${Math.round((Date.now() - inicio.getTime()) / 60000)} min`;
     const embed = await atualizarPost(interaction, 'aprovado', [
       [CAMPO.responsavel, `${u}`, true],
+      [CAMPO.assumida, `<t:${Math.floor(inicio.getTime() / 1000)}:f>`, true],
       [CAMPO.virada, virada, true],
       [CAMPO.metodo, metodo],
       [CAMPO.motivo, obs ? `Ressalvas: ${obs}` : null],
@@ -143,10 +144,10 @@ export async function onModal(interaction) {
     await avisarSolicitante(
       thread,
       embed,
-      `✅ **Validação aprovada** por ${u}.\n**Virada de chave:** ${virada}\n**Método:** ${metodo}${obs ? `\n**Ressalvas:** ${obs}` : ''}${tempo ? `\n**Tempo desde que foi assumida:** ${tempo}` : ''}\n\nPode subir o ticket de importação. Este post será arquivado após 24 h sem atividade.`,
+      `✅ **Validação aprovada** por ${u}.\n**Virada de chave:** ${virada}\n**Método:** ${metodo}${obs ? `\n**Ressalvas:** ${obs}` : ''}\n**Tempo desde que foi assumida:** ${tempo}\n\nPode subir o ticket de importação. Este post será arquivado após 24 h sem atividade.`,
     );
     await thread.setAutoArchiveDuration(1440);
-    await registrarLog(interaction.guild, `🟢 **Aprovada** ${thread} — por ${u}${tempo ? ` (${tempo} desde assumida)` : ''}`);
+    await registrarLog(interaction.guild, `🟢 **Aprovada** ${thread} — por ${u} (${tempo} desde assumida)`);
   } else if (acao === 'reprovar') {
     const motivo = f.getTextInputValue('motivo').trim();
     const embed = await atualizarPost(interaction, 'reprovado', [
