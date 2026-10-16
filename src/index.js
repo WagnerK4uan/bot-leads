@@ -1,13 +1,17 @@
 import { Client, Events, GatewayIntentBits, Partials } from 'discord.js';
 import { env } from './config.js';
+import * as historico from './commands/historico.js';
 import * as pendentes from './commands/pendentes.js';
+import * as relatorio from './commands/relatorio.js';
 import * as validacao from './commands/validacao.js';
+import { carregarPosts } from './historico.js';
 import * as botoesValidacao from './interactions/validacao.js';
 import { agendarLembretes } from './jobs/lembretes.js';
+import { agendarResumo } from './jobs/resumoSemanal.js';
 import { efemero, findForum } from './util.js';
 import { onMemberJoin, onSetorButton } from './welcome.js';
 
-export const COMANDOS = [validacao, pendentes];
+export const COMANDOS = [validacao, pendentes, relatorio, historico];
 
 if (!env.token || !env.guildId) {
   console.error('Configure DISCORD_TOKEN e GUILD_ID no arquivo .env (veja .env.example).');
@@ -25,9 +29,16 @@ client.once(Events.ClientReady, async (c) => {
   await guild.commands.set(COMANDOS.map((m) => m.data.toJSON()));
   console.log(`Comandos registrados em ${guild.name}: ${COMANDOS.map((m) => '/' + m.data.name).join(', ')}`);
   agendarLembretes(c);
+  agendarResumo(c);
+  // Deixa o histórico pronto para o autocomplete do /historico.
+  carregarPosts(guild).catch((e) => console.error('Leitura do histórico falhou:', e.message));
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
+  if (interaction.isAutocomplete()) {
+    const cmd = COMANDOS.find((m) => m.data.name === interaction.commandName);
+    return cmd?.autocomplete?.(interaction).catch((e) => console.error('Autocomplete falhou:', e.message));
+  }
   try {
     if (interaction.isChatInputCommand()) {
       const cmd = COMANDOS.find((m) => m.data.name === interaction.commandName);

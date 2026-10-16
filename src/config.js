@@ -13,6 +13,8 @@ export const env = {
   expedienteInicio: num(process.env.EXPEDIENTE_INICIO, 8),
   expedienteFim: num(process.env.EXPEDIENTE_FIM, 18),
   timezone: process.env.TZ_EXPEDIENTE || 'America/Sao_Paulo',
+  // Resumo da semana anterior em #gestao toda segunda no início do expediente.
+  resumoSemanal: process.env.RESUMO_SEMANAL !== 'false',
 };
 
 // Tudo é resolvido por nome em tempo de execução, então não há IDs para configurar.

@@ -7,7 +7,8 @@ import {
 } from 'discord.js';
 import { STATUS } from '../config.js';
 import { registrarLog } from '../log.js';
-import { CAMPO, assumidaEm, botoes, comCampo, comStatus, solicitanteDe, statusTexto } from '../post.js';
+import { invalidar } from '../historico.js';
+import { CAMPO, assumidaEm, botoes, carimbo, comCampo, comStatus, solicitanteDe, statusTexto } from '../post.js';
 import { efemero, findRole, hasRole, setStatus, statusDoPost } from '../util.js';
 
 const texto = (id, label, { required = true, placeholder, short = false, description } = {}) => {
@@ -77,6 +78,7 @@ async function atualizarPost(interaction, status, campos) {
   const payload = { embeds: [embed], components: botoes(status) };
   if (interaction.message) await interaction.update(payload);
   else await msg.edit(payload);
+  invalidar(thread.id);
   return embed;
 }
 
@@ -101,7 +103,7 @@ export async function onButton(interaction) {
     const desde = assumidaEm(interaction.message.embeds[0]) ?? new Date();
     await atualizarPost(interaction, 'analise', [
       [CAMPO.responsavel, `${u}`, true],
-      [CAMPO.assumida, `<t:${Math.floor(desde.getTime() / 1000)}:f>`, true],
+      [CAMPO.assumida, carimbo(desde), true],
     ]);
     await thread.send({ content: `🙋 ${u} assumiu esta validação.`, allowedMentions: { parse: [] } });
   } else if (acao === 'reabrir') {
@@ -110,6 +112,7 @@ export async function onButton(interaction) {
       [CAMPO.responsavel, null],
       [CAMPO.assumida, null],
       [CAMPO.tempo, null],
+      [CAMPO.finalizada, null],
     ]);
     await thread.setAutoArchiveDuration(10080);
     const importacao = findRole(interaction.guild, 'importacao');
@@ -135,11 +138,12 @@ export async function onModal(interaction) {
     const tempo = `${Math.round((Date.now() - inicio.getTime()) / 60000)} min`;
     const embed = await atualizarPost(interaction, 'aprovado', [
       [CAMPO.responsavel, `${u}`, true],
-      [CAMPO.assumida, `<t:${Math.floor(inicio.getTime() / 1000)}:f>`, true],
+      [CAMPO.assumida, carimbo(inicio), true],
       [CAMPO.virada, virada, true],
       [CAMPO.metodo, metodo],
       [CAMPO.motivo, obs ? `Ressalvas: ${obs}` : null],
       [CAMPO.tempo, tempo, true],
+      [CAMPO.finalizada, carimbo(new Date()), true],
     ]);
     await avisarSolicitante(
       thread,
@@ -153,6 +157,7 @@ export async function onModal(interaction) {
     const embed = await atualizarPost(interaction, 'reprovado', [
       [CAMPO.responsavel, `${u}`, true],
       [CAMPO.motivo, motivo],
+      [CAMPO.finalizada, carimbo(new Date()), true],
     ]);
     await avisarSolicitante(thread, embed, `⛔ **Validação reprovada** por ${u}.\n**Motivo:** ${motivo}\n\nNão suba ticket de importação para este cliente.`);
     await thread.setAutoArchiveDuration(1440);
@@ -179,6 +184,7 @@ export async function onThreadMessage(message) {
   const embed = comCampo(comStatus(msg.embeds[0], 'aguardando'), CAMPO.motivo, null);
   await setStatus(thread, thread.parent, 'aguardando');
   await msg.edit({ embeds: [embed], components: botoes('aguardando') });
+  invalidar(thread.id);
   const importacao = findRole(message.guild, 'importacao');
   await thread.send({
     content: `🔄 ${message.author} respondeu. Voltou para ${statusTexto('aguardando')} ${importacao ?? ''}`,

@@ -10,6 +10,7 @@ import {
 import { DADOS, MAX_TAGS_DADOS, STATUS } from '../config.js';
 import { botoes, embedInicial } from '../post.js';
 import { efemero, findForum, findRole, hasRole, tagId, tagsDeDados } from '../util.js';
+import { carregarPosts, contagemPorStatus, doSistema, invalidar, linhaHistorico } from '../historico.js';
 import { registrarLog } from '../log.js';
 
 export const data = new SlashCommandBuilder()
@@ -99,4 +100,25 @@ export async function onModal(interaction) {
 
   await registrarLog(guild, `🟡 **Nova validação** ${thread} — aberta por ${interaction.user}`);
   await interaction.editReply(`Validação criada: ${thread}\nAcompanhe por lá — você será mencionado quando a Importação responder.`);
+  invalidar();
+  await avisarHistorico(guild, thread, sistema).catch((e) => console.error('Histórico do sistema falhou:', e.message));
+}
+
+/** Mostra no post novo como foram as validações anteriores do mesmo sistema. */
+async function avisarHistorico(guild, thread, sistema) {
+  const anteriores = doSistema(await carregarPosts(guild), sistema).filter(
+    (r) => r.thread.id !== thread.id && (r.status === 'aprovado' || r.status === 'reprovado'),
+  );
+  if (!anteriores.length) return;
+  const vezes = anteriores.length === 1 ? '1 vez' : `${anteriores.length} vezes`;
+  await thread.send({
+    content: [
+      `📚 **${sistema}** já foi validado ${vezes}: ${contagemPorStatus(anteriores)}`,
+      ...anteriores.slice(0, 3).map((r) => `• ${linhaHistorico(r)}`),
+      anteriores.length > 3 ? `Lista completa: \`/historico sistema:${sistema}\`` : '',
+    ]
+      .filter(Boolean)
+      .join('\n'),
+    allowedMentions: { parse: [] },
+  });
 }

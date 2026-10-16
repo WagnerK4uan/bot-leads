@@ -7,6 +7,9 @@ Organiza o servidor onde o **Comercial** pede e a **Importação** valida se dá
 - O solicitante é mencionado em cada resposta; quando ele responde um post 🟠, o post volta sozinho para 🟡.
 - Lembrete automático para posts parados há mais de `SLA_HORAS` horas úteis (seg–sex, 8h–18h).
 - `/pendentes` lista a fila em aberto.
+- `/relatorio [periodo]` (Gestão/Importação): volume por status, taxa de aprovação, tempo médio até assumir e de análise (horas úteis), números por responsável e sistemas mais pedidos/reprovados.
+- Resumo semanal: toda segunda, no início do expediente, o mesmo relatório dos últimos 7 dias sai em `#gestao`.
+- `/historico sistema:<nome>` (com autocomplete) lista as validações anteriores daquele sistema e o método usado. Ao abrir uma validação de um sistema já analisado, o bot posta esse histórico no próprio post.
 - `#log-validacoes` guarda o histórico (aberta / aprovada / reprovada).
 - Boas-vindas: tutorial com imagens em `#boas-vindas`, botões para escolher setor e DM para quem entra.
 
@@ -64,6 +67,7 @@ Ficam em `assets/` e são geradas de `tools/tutorial/index.html` com `npm run as
 |---|---|
 | Tempo até o lembrete | `SLA_HORAS` no `.env` |
 | Horário de expediente | `EXPEDIENTE_INICIO` / `EXPEDIENTE_FIM` |
+| Desligar o resumo semanal | `RESUMO_SEMANAL=false` no `.env` |
 | Tipos de dados do formulário | `DADOS` em `src/config.js` |
 | Nomes de canais/cargos | `CHANNELS` / `ROLES` em `src/config.js` (rode o setup de novo) |
 | Textos do tutorial | `src/welcome.js` |

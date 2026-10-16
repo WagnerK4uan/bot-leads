@@ -15,6 +15,7 @@ export const CAMPO = {
   motivo: 'Motivo',
   assumida: 'Assumida em',
   tempo: 'Tempo até aprovação',
+  finalizada: 'Finalizada em',
 };
 
 export function embedInicial({ cliente, sistema, acesso, dados, obs, solicitanteId }) {
@@ -61,11 +62,19 @@ export function solicitanteDe(embed) {
   return f?.value.match(/<@!?(\d+)>/)?.[1] ?? null;
 }
 
-export function assumidaEm(embed) {
-  const f = embed.fields?.find((x) => x.name === CAMPO.assumida);
+export const responsavelDe = (embed) =>
+  embed.fields?.find((f) => f.name === CAMPO.responsavel)?.value.match(/<@!?(\d+)>/)?.[1] ?? null;
+
+/** Lê um campo de data no formato <t:unix:f>. */
+export function dataDoCampo(embed, nome) {
+  const f = embed.fields?.find((x) => x.name === nome);
   const unix = f?.value.match(/<t:(\d+)/)?.[1];
   return unix ? new Date(Number(unix) * 1000) : null;
 }
+
+export const assumidaEm = (embed) => dataDoCampo(embed, CAMPO.assumida);
+
+export const carimbo = (date) => `<t:${Math.floor(date.getTime() / 1000)}:f>`;
 
 export function botoes(status) {
   const finalizado = status === 'aprovado' || status === 'reprovado';

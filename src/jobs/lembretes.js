@@ -1,10 +1,7 @@
 import { env } from '../config.js';
 import { postsAbertos } from '../commands/pendentes.js';
-import { CAMPO, solicitanteDe } from '../post.js';
+import { responsavelDe, solicitanteDe } from '../post.js';
 import { findRole, horasUteis } from '../util.js';
-
-const responsavelDe = (embed) =>
-  embed.fields?.find((f) => f.name === CAMPO.responsavel)?.value.match(/<@!?(\d+)>/)?.[1] ?? null;
 
 /**
  * Cobra posts parados há mais de SLA_HORAS úteis. A própria mensagem de lembrete vira a

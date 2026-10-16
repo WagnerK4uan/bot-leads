@@ -44,15 +44,21 @@ export function tagsDeDados(forum, valores, limite) {
 export const efemero = (content) => ({ content, flags: MessageFlags.Ephemeral });
 
 // Partes de data no fuso do expediente (o servidor de hospedagem costuma estar em UTC).
-function partes(date) {
-  const fmt = new Intl.DateTimeFormat('en-US', {
-    timeZone: env.timezone,
-    weekday: 'short',
-    hour: 'numeric',
-    hourCycle: 'h23',
-  }).formatToParts(date);
+// Criar o formatter é caro e horasUteis() chama partes() a cada 5 min do intervalo.
+const formatter = new Intl.DateTimeFormat('en-US', {
+  timeZone: env.timezone,
+  weekday: 'short',
+  hour: 'numeric',
+  hourCycle: 'h23',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+export function partes(date) {
+  const fmt = formatter.formatToParts(date);
   const get = (t) => fmt.find((p) => p.type === t).value;
-  return { weekday: get('weekday'), hour: Number(get('hour')) };
+  return { weekday: get('weekday'), hour: Number(get('hour')), dia: `${get('year')}-${get('month')}-${get('day')}` };
 }
 
 function emExpediente(date) {
