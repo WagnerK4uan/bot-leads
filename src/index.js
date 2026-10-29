@@ -1,3 +1,4 @@
+import { createServer } from 'node:http';
 import { Client, Events, GatewayIntentBits, Partials } from 'discord.js';
 import { env } from './config.js';
 import * as historico from './commands/historico.js';
@@ -70,3 +71,11 @@ client.on(Events.MessageCreate, async (message) => {
 client.on(Events.GuildMemberAdd, (member) => onMemberJoin(member).catch((e) => console.error('Boas-vindas falhou:', e.message)));
 
 client.login(env.token);
+
+// Hospedagens como o Render definem PORT e exigem uma porta aberta; o ping externo nela evita que o serviço durma.
+if (process.env.PORT) {
+  createServer((_req, res) => {
+    res.writeHead(client.isReady() ? 200 : 503, { 'Content-Type': 'text/plain' });
+    res.end(client.isReady() ? 'ok' : 'conectando');
+  }).listen(process.env.PORT, () => console.log(`Health check na porta ${process.env.PORT}`));
+}
