@@ -66,6 +66,7 @@ const ESTRUTURA = [
       { key: 'comercial', topic: 'Conversa interna do time Comercial.', perms: { everyone: OCULTO, comercial: ESCREVER, importacao: OCULTO } },
       { key: 'importacao', topic: 'Conversa interna do time de Importação.', perms: { everyone: OCULTO, importacao: ESCREVER, comercial: OCULTO } },
       { key: 'geral', topic: 'Conversa entre os times. Pedido de validação vai no /validacao.', perms: { everyone: OCULTO, comercial: ESCREVER, importacao: ESCREVER } },
+      { key: 'metricas', topic: 'Fechamento mensal: aprovadas, reprovadas, tempo médio de análise e pendentes.', perms: { everyone: OCULTO, importacao: SO_LER, comercial: OCULTO } },
     ],
   },
   {

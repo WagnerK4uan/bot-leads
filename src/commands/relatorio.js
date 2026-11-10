@@ -20,7 +20,7 @@ export const data = new SlashCommandBuilder()
       ),
   );
 
-const media = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
+export const media = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
 
 export function fmtHoras(h) {
   if (h === null) return '—';

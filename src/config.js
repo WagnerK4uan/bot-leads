@@ -15,6 +15,8 @@ export const env = {
   timezone: process.env.TZ_EXPEDIENTE || 'America/Sao_Paulo',
   // Resumo da semana anterior em #gestao toda segunda no início do expediente.
   resumoSemanal: process.env.RESUMO_SEMANAL !== 'false',
+  // Fechamento do mês anterior em #metricas-importacao no 1º dia útil do mês.
+  metricasMensal: process.env.METRICAS_MENSAL !== 'false',
 };
 
 // Tudo é resolvido por nome em tempo de execução, então não há IDs para configurar.
@@ -33,6 +35,7 @@ export const CHANNELS = {
   comercial: 'comercial',
   importacao: 'importacao',
   geral: 'geral',
+  metricas: 'metricas-importacao',
   gestao: 'gestao',
 };
 

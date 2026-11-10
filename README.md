@@ -9,6 +9,8 @@ Organiza o servidor onde o **Comercial** pede e a **Importação** valida se dá
 - `/pendentes` lista a fila em aberto.
 - `/relatorio [periodo]` (Gestão/Importação): volume por status, taxa de aprovação, tempo médio até assumir e de análise (horas úteis), números por responsável e sistemas mais pedidos/reprovados.
 - Resumo semanal: toda segunda, no início do expediente, o mesmo relatório dos últimos 7 dias sai em `#gestao`.
+- `/metricas [mes]` (Importação/Gestão): fechamento do mês em `#metricas-importacao` — aprovadas, reprovadas, tempo médio de análise (de assumida até aprovar/reprovar, horas úteis), números por responsável e aviso das validações ainda pendentes. Sem `mes`, usa o mês anterior.
+- Fechamento mensal: no 1º dia útil de cada mês, no início do expediente, o `/metricas` do mês anterior sai sozinho em `#metricas-importacao`.
 - `/historico sistema:<nome>` (com autocomplete) lista as validações anteriores daquele sistema e o método usado. Ao abrir uma validação de um sistema já analisado, o bot posta esse histórico no próprio post.
 - `#log-validacoes` guarda o histórico (aberta / aprovada / reprovada).
 - Boas-vindas: tutorial com imagens em `#boas-vindas`, botões para escolher setor e DM para quem entra.
@@ -68,6 +70,7 @@ Ficam em `assets/` e são geradas de `tools/tutorial/index.html` com `npm run as
 | Tempo até o lembrete | `SLA_HORAS` no `.env` |
 | Horário de expediente | `EXPEDIENTE_INICIO` / `EXPEDIENTE_FIM` |
 | Desligar o resumo semanal | `RESUMO_SEMANAL=false` no `.env` |
+| Desligar o fechamento mensal | `METRICAS_MENSAL=false` no `.env` |
 | Tipos de dados do formulário | `DADOS` em `src/config.js` |
 | Nomes de canais/cargos | `CHANNELS` / `ROLES` em `src/config.js` (rode o setup de novo) |
 | Textos do tutorial | `src/welcome.js` |

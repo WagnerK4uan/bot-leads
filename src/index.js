@@ -2,17 +2,19 @@ import { createServer } from 'node:http';
 import { Client, Events, GatewayIntentBits, Partials } from 'discord.js';
 import { env } from './config.js';
 import * as historico from './commands/historico.js';
+import * as metricas from './commands/metricas.js';
 import * as pendentes from './commands/pendentes.js';
 import * as relatorio from './commands/relatorio.js';
 import * as validacao from './commands/validacao.js';
 import { carregarPosts } from './historico.js';
 import * as botoesValidacao from './interactions/validacao.js';
+import { agendarFechamento } from './jobs/fechamentoMensal.js';
 import { agendarLembretes } from './jobs/lembretes.js';
 import { agendarResumo } from './jobs/resumoSemanal.js';
 import { efemero, findForum } from './util.js';
 import { onMemberJoin, onSetorButton } from './welcome.js';
 
-export const COMANDOS = [validacao, pendentes, relatorio, historico];
+export const COMANDOS = [validacao, pendentes, relatorio, historico, metricas];
 
 if (!env.token || !env.guildId) {
   console.error('Configure DISCORD_TOKEN e GUILD_ID no arquivo .env (veja .env.example).');
@@ -31,6 +33,7 @@ client.once(Events.ClientReady, async (c) => {
   console.log(`Comandos registrados em ${guild.name}: ${COMANDOS.map((m) => '/' + m.data.name).join(', ')}`);
   agendarLembretes(c);
   agendarResumo(c);
+  agendarFechamento(c);
   // Deixa o histórico pronto para o autocomplete do /historico.
   carregarPosts(guild).catch((e) => console.error('Leitura do histórico falhou:', e.message));
 });
