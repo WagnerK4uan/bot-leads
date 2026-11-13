@@ -15,6 +15,13 @@ export const env = {
   expedienteInicio: num(process.env.EXPEDIENTE_INICIO, 8),
   expedienteFim: num(process.env.EXPEDIENTE_FIM, 18),
   timezone: process.env.TZ_EXPEDIENTE || 'America/Sao_Paulo',
+  // Feriados contam como fim de semana: "MM-DD" repete todo ano, "AAAA-MM-DD" é data única.
+  feriados: new Set(
+    (process.env.FERIADOS ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+  ),
   // Resumo da semana anterior em #gestao toda segunda no início do expediente.
   resumoSemanal: process.env.RESUMO_SEMANAL !== 'false',
   // Fechamento do mês anterior em #metricas-importacao no 1º dia útil do mês.

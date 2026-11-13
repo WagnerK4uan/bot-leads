@@ -28,15 +28,23 @@ const client = new Client({
 
 client.once(Events.ClientReady, async (c) => {
   console.log(`Online como ${c.user.tag}`);
-  const guild = await c.guilds.fetch(env.guildId);
-  await guild.commands.set(COMANDOS.map((m) => m.data.toJSON()));
-  console.log(`Comandos registrados em ${guild.name}: ${COMANDOS.map((m) => '/' + m.data.name).join(', ')}`);
+  try {
+    const guild = await c.guilds.fetch(env.guildId);
+    await guild.commands.set(COMANDOS.map((m) => m.data.toJSON()));
+    console.log(`Comandos registrados em ${guild.name}: ${COMANDOS.map((m) => '/' + m.data.name).join(', ')}`);
+    // Deixa o histórico pronto para o autocomplete do /historico.
+    carregarPosts(guild).catch((e) => console.error('Leitura do histórico falhou:', e.message));
+  } catch (e) {
+    console.error(`Falha ao registrar comandos no servidor ${env.guildId} (confira GUILD_ID e as permissões do bot):`, e);
+  }
+  // Os jobs varrem os servidores do cache a cada execução, então são agendados mesmo se o registro acima falhar.
   agendarLembretes(c);
   agendarResumo(c);
   agendarFechamento(c);
-  // Deixa o histórico pronto para o autocomplete do /historico.
-  carregarPosts(guild).catch((e) => console.error('Leitura do histórico falhou:', e.message));
 });
+
+client.on(Events.Error, (e) => console.error('Erro do client:', e));
+client.on(Events.Warn, (m) => console.warn('Aviso do client:', m));
 
 client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.isAutocomplete()) {
@@ -72,6 +80,21 @@ client.on(Events.MessageCreate, async (message) => {
 });
 
 client.on(Events.GuildMemberAdd, (member) => onMemberJoin(member).catch((e) => console.error('Boas-vindas falhou:', e.message)));
+
+// Promessa rejeitada sem .catch: loga e segue (no Node ≥ 15 ela derrubaria o processo).
+process.on('unhandledRejection', (e) => console.error('Promise rejeitada sem tratamento:', e));
+// Exceção síncrona não capturada deixa o processo em estado incerto: loga e sai; a hospedagem reinicia o bot.
+process.on('uncaughtException', (e) => {
+  console.error('Exceção não capturada:', e);
+  process.exit(1);
+});
+// Deploy/Ctrl+C: fecha a conexão com o Discord antes de sair.
+for (const sinal of ['SIGTERM', 'SIGINT']) {
+  process.on(sinal, () => {
+    console.log(`${sinal} recebido, encerrando.`);
+    client.destroy().finally(() => process.exit(0));
+  });
+}
 
 client.login(env.token);
 

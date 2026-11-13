@@ -12,8 +12,8 @@ As specs ficam em `pendentes/` até serem implementadas; ao finalizar uma, ela �
 | 03 | [Tempo do post em horas úteis](concluidas/03-tempo-em-horas-uteis.md) | Correção | M | 09 (testes), 04 |
 | 04 | [Aprovar/Reprovar mantém o responsável](concluidas/04-manter-responsavel-ao-finalizar.md) | Correção | P | 03 |
 | 05 | [Ocultar acesso/senha ao finalizar](pendentes/05-ocultar-acesso-ao-finalizar.md) | Segurança | P | 10, 11 |
-| 06 | [Proteção contra crash](pendentes/06-protecao-contra-crash.md) | Robustez | P | — |
-| 07 | [Feriados no cálculo de horas úteis](pendentes/07-feriados.md) | Robustez | P | 02, 09 |
+| 06 | [Proteção contra crash](concluidas/06-protecao-contra-crash.md) | Robustez | P | — |
+| 07 | [Feriados no cálculo de horas úteis](concluidas/07-feriados.md) | Robustez | P | 02, 09 |
 | 08 | [Trava contra clique duplo](pendentes/08-trava-clique-duplo.md) | Robustez | M | 12 |
 | 09 | [Testes com node --test](pendentes/09-testes.md) | Robustez | M | — |
 | 10 | [Comercial cancela o pedido](pendentes/10-cancelar-pedido.md) | Funcionalidade | M | 05, 11 |

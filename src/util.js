@@ -61,10 +61,16 @@ export function partes(date) {
   return { weekday: get('weekday'), hour: Number(get('hour')), dia: `${get('year')}-${get('month')}-${get('day')}` };
 }
 
+// Recebe as partes já calculadas: horasUteis() passa por aqui a cada 5 min do intervalo.
+const diaUtil = ({ weekday, dia }) =>
+  weekday !== 'Sat' && weekday !== 'Sun' && !env.feriados.has(dia) && !env.feriados.has(dia.slice(5));
+
+/** Seg–sex e fora dos feriados de FERIADOS ("MM-DD" ou "AAAA-MM-DD"). */
+export const ehDiaUtil = (date) => diaUtil(partes(date));
+
 export function emExpediente(date) {
-  const { weekday, hour } = partes(date);
-  if (weekday === 'Sat' || weekday === 'Sun') return false;
-  return hour >= env.expedienteInicio && hour < env.expedienteFim;
+  const p = partes(date);
+  return diaUtil(p) && p.hour >= env.expedienteInicio && p.hour < env.expedienteFim;
 }
 
 /** Horas úteis (seg–sex, dentro do expediente) entre duas datas, com resolução de 5 min. */
