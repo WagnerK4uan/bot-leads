@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
-import { STATUS } from './config.js';
+import { DADOS, STATUS } from './config.js';
 
 export const CAMPO = {
   cliente: 'Cliente',
@@ -35,6 +35,21 @@ export function embedInicial({ cliente, sistema, acesso, dados, obs, solicitante
     )
     .setFooter({ text: 'Só suba o ticket de importação com o status 🟢 Aprovado.' })
     .setTimestamp();
+}
+
+/** Campos do pedido no embed, no formato do formulário do /validacao (inverso de embedInicial). */
+export function lerPedido(embed) {
+  const campo = (nome) => embed.fields?.find((f) => f.name === nome)?.value ?? '';
+  const labels = campo(CAMPO.dados)
+    .split('\n')
+    .map((l) => l.replace(/^✅\s*/, '').trim());
+  return {
+    cliente: campo(CAMPO.cliente),
+    sistema: campo(CAMPO.sistema),
+    acesso: campo(CAMPO.acesso),
+    dadosValores: DADOS.filter((d) => labels.includes(d.label)).map((d) => d.value),
+    obs: campo(CAMPO.obs),
+  };
 }
 
 export const statusTexto = (key) => `${STATUS[key].emoji} ${STATUS[key].label}`;
@@ -133,6 +148,10 @@ export function botoes(status, pausado = false) {
     ),
     // Ações do solicitante (a primeira linha já tem o máximo de 5 botões).
     new ActionRowBuilder().addComponents(
+      // Em análise o pedido não muda por baixo de quem está validando.
+      ...(status === 'analise'
+        ? []
+        : [new ButtonBuilder().setCustomId('val:editar').setLabel('Editar pedido').setEmoji('✏️').setStyle(ButtonStyle.Secondary)]),
       new ButtonBuilder().setCustomId('val:cancelar').setLabel('Cancelar pedido').setEmoji('🚫').setStyle(ButtonStyle.Secondary),
     ),
   ];

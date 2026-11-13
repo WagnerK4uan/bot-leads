@@ -22,29 +22,30 @@ export async function execute(interaction) {
     return interaction.reply(efemero('Só o time **Comercial** abre validações. Escolha seu setor em #boas-vindas.'));
   }
 
-  const modal = new ModalBuilder()
-    .setCustomId('validacao:nova')
-    .setTitle('Nova validação de importação')
+  await interaction.showModal(modalValidacao({ customId: 'validacao:nova' }));
+}
+
+/** Formulário do pedido. Com `valores` ({ cliente, sistema, acesso, dadosValores, obs }) já vem preenchido (✏️ Editar). */
+export function modalValidacao({ customId, valores = {} } = {}) {
+  const input = (id, style, max, placeholder, required = true) => {
+    const t = new TextInputBuilder().setCustomId(id).setStyle(style).setMaxLength(max).setRequired(required).setPlaceholder(placeholder);
+    if (valores[id]) t.setValue(valores[id].slice(0, max));
+    return t;
+  };
+  const marcados = valores.dadosValores ?? [];
+  return new ModalBuilder()
+    .setCustomId(customId)
+    .setTitle(valores.cliente ? 'Editar pedido de validação' : 'Nova validação de importação')
     .addLabelComponents(
-      new LabelBuilder()
-        .setLabel('Cliente')
-        .setTextInputComponent(
-          new TextInputBuilder().setCustomId('cliente').setStyle(TextInputStyle.Short).setMaxLength(80).setPlaceholder('Ex.: Juliana Modas'),
-        ),
+      new LabelBuilder().setLabel('Cliente').setTextInputComponent(input('cliente', TextInputStyle.Short, 80, 'Ex.: Juliana Modas')),
       new LabelBuilder()
         .setLabel('Sistema antigo do cliente')
-        .setTextInputComponent(
-          new TextInputBuilder().setCustomId('sistema').setStyle(TextInputStyle.Short).setMaxLength(60).setPlaceholder('Ex.: Clipp Pro'),
-        ),
+        .setTextInputComponent(input('sistema', TextInputStyle.Short, 60, 'Ex.: Clipp Pro')),
       new LabelBuilder()
         .setLabel('Acesso ao PC do cliente')
         .setDescription('Número do AnyDesk ou TeamViewer. Se for TeamViewer, coloque a senha também.')
         .setTextInputComponent(
-          new TextInputBuilder()
-            .setCustomId('acesso')
-            .setStyle(TextInputStyle.Short)
-            .setMaxLength(200)
-            .setPlaceholder('AnyDesk 1 760 828 359  |  TeamViewer 123 456 789 senha abc123'),
+          input('acesso', TextInputStyle.Short, 200, 'AnyDesk 1 760 828 359  |  TeamViewer 123 456 789 senha abc123'),
         ),
       new LabelBuilder()
         .setLabel('Dados para importar')
@@ -54,21 +55,14 @@ export async function execute(interaction) {
             .setPlaceholder('Marque tudo que o cliente quer trazer')
             .setMinValues(1)
             .setMaxValues(DADOS.length)
-            .addOptions(DADOS.map((d) => ({ label: d.label, value: d.value }))),
+            .addOptions(DADOS.map((d) => ({ label: d.label, value: d.value, default: marcados.includes(d.value) }))),
         ),
       new LabelBuilder()
         .setLabel('Observações (opcional)')
         .setTextInputComponent(
-          new TextInputBuilder()
-            .setCustomId('obs')
-            .setStyle(TextInputStyle.Paragraph)
-            .setRequired(false)
-            .setMaxLength(1000)
-            .setPlaceholder('Cliente em ligação, horário combinado, versão do sistema, banco de dados...'),
+          input('obs', TextInputStyle.Paragraph, 1000, 'Cliente em ligação, horário combinado, versão do sistema, banco de dados...', false),
         ),
     );
-
-  await interaction.showModal(modal);
 }
 
 export async function onModal(interaction) {

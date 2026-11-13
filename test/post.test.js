@@ -84,6 +84,33 @@ test('comCampo remove com null e adiciona no fim', () => {
 test('botoes: aberto tem a linha do solicitante com Cancelar; finalizado só Reabrir', async () => {
   const { botoes } = await import('../src/post.js');
   const ids = (rows) => rows.map((r) => r.components.map((c) => c.data.custom_id));
-  assert.deepEqual(ids(botoes('aguardando'))[1], ['val:cancelar']);
+  assert.ok(ids(botoes('aguardando'))[1].includes('val:cancelar'));
   for (const s of ['aprovado', 'reprovado', 'cancelado']) assert.deepEqual(ids(botoes(s)), [['val:reabrir']]);
+});
+
+test('lerPedido devolve os valores do formulário a partir do embed inicial', async () => {
+  const { embedInicial, lerPedido } = await import('../src/post.js');
+  const embed = embedInicial({
+    cliente: 'Juliana Modas',
+    sistema: 'Clipp Pro',
+    acesso: 'AnyDesk 123',
+    dados: ['Clientes', 'Histórico de Venda'],
+    obs: '',
+    solicitanteId: '1',
+  }).toJSON();
+  assert.deepEqual(lerPedido(embed), {
+    cliente: 'Juliana Modas',
+    sistema: 'Clipp Pro',
+    acesso: 'AnyDesk 123',
+    dadosValores: ['clientes', 'historico'],
+    obs: '',
+  });
+});
+
+test('botoes: Editar aparece em 🟡 e 🟠, não em 🔵', async () => {
+  const { botoes } = await import('../src/post.js');
+  const linha2 = (s) => botoes(s)[1].components.map((c) => c.data.custom_id);
+  assert.deepEqual(linha2('aguardando'), ['val:editar', 'val:cancelar']);
+  assert.deepEqual(linha2('info'), ['val:editar', 'val:cancelar']);
+  assert.deepEqual(linha2('analise'), ['val:cancelar']);
 });

@@ -6,9 +6,10 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
-import { STATUS } from '../config.js';
+import { DADOS, STATUS } from '../config.js';
 import { registrarLog } from '../log.js';
 import { invalidar } from '../historico.js';
+import { modalValidacao } from '../commands/validacao.js';
 import {
   CAMPO,
   assumidaEm,
@@ -18,13 +19,23 @@ import {
   comStatus,
   emPausa,
   fecharPausa,
+  lerPedido,
   pausasDe,
   responsavelDe,
   solicitanteDe,
   statusTexto,
   textoPausas,
 } from '../post.js';
-import { efemero, findRole, fmtDuracaoUtil, hasRole, horasUteisSemPausa, setStatus, statusDoPost } from '../util.js';
+import {
+  efemero,
+  findRole,
+  fmtDuracaoUtil,
+  hasRole,
+  horasUteisSemPausa,
+  setStatus,
+  setTagsDeDados,
+  statusDoPost,
+} from '../util.js';
 
 const texto = (id, label, { required = true, placeholder, short = false, description } = {}) => {
   const l = new LabelBuilder().setLabel(label).setTextInputComponent(
@@ -164,11 +175,21 @@ function avisarSolicitante(thread, embed, texto) {
 const ehSolicitanteOuGestao = (interaction) =>
   solicitanteDe(interaction.message.embeds[0] ?? {}) === interaction.user.id || hasRole(interaction.member, 'gestao');
 
+// Ações de quem abriu o pedido: tratadas antes da checagem de cargo da Importação.
+const ACOES_SOLICITANTE = {
+  cancelar: { recusa: 'Só quem abriu o pedido pode cancelar.', modal: () => MODAIS.cancelar() },
+  editar: {
+    recusa: 'Só quem abriu o pedido pode editar.',
+    modal: (embed) => modalValidacao({ customId: 'valm:editar', valores: lerPedido(embed) }),
+  },
+};
+
 export async function onButton(interaction) {
   const acao = interaction.customId.split(':')[1];
-  if (acao === 'cancelar') {
-    if (!ehSolicitanteOuGestao(interaction)) return interaction.reply(efemero('Só quem abriu o pedido pode cancelar.'));
-    return interaction.showModal(MODAIS.cancelar());
+  if (ACOES_SOLICITANTE[acao]) {
+    const { recusa, modal } = ACOES_SOLICITANTE[acao];
+    if (!ehSolicitanteOuGestao(interaction)) return interaction.reply(efemero(recusa));
+    return interaction.showModal(modal(interaction.message.embeds[0]));
   }
   if ((acao === 'pausar' || acao === 'retomar') && !hasRole(interaction.member, 'importacao')) {
     return interaction.reply(efemero('Só o time de **Importação** pode pausar ou retomar o tempo.'));
@@ -334,7 +355,61 @@ Este post será arquivado após 24 h sem atividade.`,
     });
     await thread.setAutoArchiveDuration(1440);
     await registrarLog(interaction.guild, `⚪ **Cancelada** ${thread} — por ${u}${motivo ? `: ${motivo}` : ''}`);
+  } else if (acao === 'editar') {
+    return editarPedido(interaction, thread, msg, atual, status);
   }
+}
+
+const ROTULOS_PEDIDO = { cliente: 'Cliente', sistema: 'Sistema', acesso: 'Acesso', dadosValores: 'Dados', obs: 'Observações' };
+
+/** Substitui os campos do pedido; Observações nova entra logo depois de Dados, para manter a ordem do post. */
+function comPedido(embed, { cliente, sistema, acesso, dadosValores, obs }) {
+  const dados = DADOS.filter((d) => dadosValores.includes(d.value))
+    .map((d) => `✅ ${d.label}`)
+    .join('\n');
+  let e = comCampo(embed, CAMPO.cliente, cliente, true);
+  e = comCampo(e, CAMPO.sistema, sistema, true);
+  e = comCampo(e, CAMPO.acesso, acesso);
+  e = comCampo(e, CAMPO.dados, dados);
+  const fields = e.data.fields.filter((f) => f.name !== CAMPO.obs);
+  if (obs) fields.splice(fields.findIndex((f) => f.name === CAMPO.dados) + 1, 0, { name: CAMPO.obs, value: obs, inline: false });
+  return e.setFields(fields).setTitle(`📋 ${cliente}`);
+}
+
+async function editarPedido(interaction, thread, msg, atual, status) {
+  const u = interaction.user;
+  if (status === 'analise') {
+    return avisar(interaction, 'O post está em análise e não pode mais ser editado. Escreva aqui no post o que mudou.');
+  }
+  const f = interaction.fields;
+  const novo = {
+    cliente: f.getTextInputValue('cliente').trim(),
+    sistema: f.getTextInputValue('sistema').trim(),
+    acesso: f.getTextInputValue('acesso').trim(),
+    dadosValores: f.getStringSelectValues('dados'),
+    obs: f.getTextInputValue('obs')?.trim() ?? '',
+  };
+  const antigo = lerPedido(atual);
+  const igual = (k) => (k === 'dadosValores' ? [...novo[k]].sort().join() === [...antigo[k]].sort().join() : novo[k] === antigo[k]);
+  const mudou = Object.keys(ROTULOS_PEDIDO).filter((k) => !igual(k));
+  if (!mudou.length) return avisar(interaction, 'Nada mudou no pedido.');
+
+  if (thread.archived) await thread.setArchived(false);
+  const embed = comPedido(atual, novo);
+  if (mudou.includes('cliente') || mudou.includes('sistema')) await thread.setName(`${novo.cliente} — ${novo.sistema}`.slice(0, 100));
+  if (mudou.includes('dadosValores')) await setTagsDeDados(thread, thread.parent, novo.dadosValores);
+
+  const lista = mudou.map((k) => ROTULOS_PEDIDO[k]).join(', ');
+  // 🟠: a edição conta como resposta ao pedido de informação.
+  if (status === 'info') {
+    await thread.send({ content: `✏️ ${u} editou o pedido: ${lista}`, allowedMentions: { parse: [] } });
+    await voltarDeInfo(thread, msg, embed, u, 'editou o pedido');
+  } else {
+    await msg.edit({ embeds: [embed], components: botoes(status, emPausa(embed.data)) });
+    invalidar(thread.id);
+    await thread.send({ content: `✏️ ${u} editou o pedido: ${lista}`, allowedMentions: { parse: [] } });
+  }
+  await registrarLog(interaction.guild, `✏️ **Editada** ${thread} — por ${u} (${lista})`);
 }
 
 /**
@@ -351,24 +426,31 @@ export async function onThreadMessage(message) {
 async function voltarParaAnalise(message, thread) {
   const { msg, embed: atual, status: statusAtual } = await estadoFresco(thread).catch(() => ({}));
   if (statusAtual !== 'info' || solicitanteDe(atual) !== message.author.id) return;
+  await voltarDeInfo(thread, msg, atual, message.author);
+}
 
-  const responsavelId = responsavelDe(atual);
+/**
+ * Tira o post do 🟠: volta para 🔵 com o mesmo responsável (ou 🟡 se não houver) e avisa quem vai continuar.
+ * `embed` é o embed a gravar (o atual, ou já editado pelo ✏️ Editar).
+ */
+async function voltarDeInfo(thread, msg, base, autor, verbo = 'respondeu') {
+  const responsavelId = responsavelDe(base.data ?? base);
   const status = responsavelId ? 'analise' : 'aguardando';
-  const embed = comCampo(comStatus(atual, status), CAMPO.motivo, null);
+  const embed = comCampo(comStatus(base, status), CAMPO.motivo, null);
   await setStatus(thread, thread.parent, status);
   await msg.edit({ embeds: [embed], components: botoes(status, emPausa(embed.data)) });
   invalidar(thread.id);
 
   if (responsavelId) {
     await thread.send({
-      content: `🔄 ${message.author} respondeu. Voltou para ${statusTexto(status)} <@${responsavelId}>`,
+      content: `🔄 ${autor} ${verbo}. Voltou para ${statusTexto(status)} <@${responsavelId}>`,
       allowedMentions: { users: [responsavelId] },
     });
     return;
   }
-  const importacao = findRole(message.guild, 'importacao');
+  const importacao = findRole(thread.guild, 'importacao');
   await thread.send({
-    content: `🔄 ${message.author} respondeu. Voltou para ${statusTexto(status)} ${importacao ?? ''}`,
+    content: `🔄 ${autor} ${verbo}. Voltou para ${statusTexto(status)} ${importacao ?? ''}`,
     allowedMentions: { roles: importacao ? [importacao.id] : [] },
   });
 }

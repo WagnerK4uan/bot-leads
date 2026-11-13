@@ -1,5 +1,5 @@
 import { ChannelType, MessageFlags } from 'discord.js';
-import { CHANNELS, DADOS, ROLES, STATUS, env } from './config.js';
+import { CHANNELS, DADOS, MAX_TAGS_DADOS, ROLES, STATUS, env } from './config.js';
 
 export const findRole = (guild, key) => guild.roles.cache.find((r) => r.name === ROLES[key].name);
 
@@ -39,6 +39,13 @@ export function tagsDeDados(forum, valores, limite) {
     .map((d) => tagId(forum, d.tag))
     .filter(Boolean)
     .slice(0, limite);
+}
+
+/** Troca as tags de dados preservando a tag de status (o inverso de setStatus). */
+export async function setTagsDeDados(thread, forum, valores) {
+  const statusIds = new Set(Object.values(STATUS).map((s) => tagId(forum, s.tag)));
+  const status = thread.appliedTags.filter((id) => statusIds.has(id));
+  await thread.setAppliedTags([...status, ...tagsDeDados(forum, valores, MAX_TAGS_DADOS)].slice(0, 5));
 }
 
 export const efemero = (content) => ({ content, flags: MessageFlags.Ephemeral });
