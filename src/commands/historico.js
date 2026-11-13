@@ -1,5 +1,5 @@
 import { EmbedBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js';
-import { carregarPosts, chaveSistema, contagemPorStatus, doSistema, emCache, linhaHistorico } from '../historico.js';
+import { carregarPosts, normalizar, contagemPorStatus, doSistema, emCache, linhaHistorico } from '../historico.js';
 import { efemero, hasRole } from '../util.js';
 
 export const data = new SlashCommandBuilder()
@@ -10,7 +10,7 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function autocomplete(interaction) {
-  const busca = chaveSistema(interaction.options.getFocused());
+  const busca = normalizar(interaction.options.getFocused());
   const nomes = new Map(); // chave -> nome mais recente, para "Clipp Pro" aparecer uma vez só
   for (const r of emCache(interaction.guild)) {
     if (r.sistemaChave && !nomes.has(r.sistemaChave)) nomes.set(r.sistemaChave, r.sistema);

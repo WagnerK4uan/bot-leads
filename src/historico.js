@@ -20,8 +20,8 @@ export function invalidar(threadId) {
   for (const c of cache.values()) c.em = 0;
 }
 
-/** "Clipp  Pró" e "clipp pro" viram a mesma chave. */
-export const chaveSistema = (nome) =>
+/** "Clipp  Pró" e "clipp pro" viram a mesma chave (sem acento, caixa ou espaços extras). */
+export const normalizar = (nome) =>
   (nome ?? '')
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
@@ -43,7 +43,7 @@ function lerEmbed(embed) {
   return {
     cliente: campo(embed, CAMPO.cliente),
     sistema,
-    sistemaChave: chaveSistema(sistema),
+    sistemaChave: normalizar(sistema),
     solicitanteId: solicitanteDe(embed),
     responsavelId: responsavelDe(embed),
     assumidaEm: assumida,
@@ -110,7 +110,7 @@ export async function carregarPosts(guild, { forcar = false } = {}) {
 
 /** Validações do mesmo sistema, mais novas primeiro. */
 export const doSistema = (registros, nome) => {
-  const chave = chaveSistema(nome);
+  const chave = normalizar(nome);
   return chave ? registros.filter((r) => r.sistemaChave === chave) : [];
 };
 

@@ -7,10 +7,10 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
-import { DADOS, MAX_TAGS_DADOS, STATUS } from '../config.js';
+import { DADOS, MAX_TAGS_DADOS, STATUS, STATUS_ABERTOS } from '../config.js';
 import { botoes, embedInicial } from '../post.js';
 import { efemero, findForum, findRole, hasRole, tagId, tagsDeDados } from '../util.js';
-import { carregarPosts, contagemPorStatus, doSistema, invalidar, linhaHistorico } from '../historico.js';
+import { carregarPosts, contagemPorStatus, doSistema, invalidar, linhaHistorico, normalizar } from '../historico.js';
 import { registrarLog } from '../log.js';
 
 export const data = new SlashCommandBuilder()
@@ -79,6 +79,11 @@ export async function onModal(interaction) {
   const dados = DADOS.filter((d) => valores.includes(d.value)).map((d) => d.label);
 
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  // O post é criado mesmo assim (pode ser outra loja do mesmo dono); só avisa. Falha na consulta = sem aviso.
+  const duplicado = await abertoDoCliente(guild, cliente).catch((e) => {
+    console.error('Checagem de duplicidade falhou:', e.message);
+    return null;
+  });
 
   const importacao = findRole(guild, 'importacao');
   const thread = await forum.threads.create({
@@ -93,9 +98,28 @@ export async function onModal(interaction) {
   });
 
   await registrarLog(guild, `🟡 **Nova validação** ${thread} — aberta por ${interaction.user}`);
-  await interaction.editReply(`Validação criada: ${thread}\nAcompanhe por lá — você será mencionado quando a Importação responder.`);
+  await interaction.editReply(
+    `Validação criada: ${thread}\nAcompanhe por lá — você será mencionado quando a Importação responder.` +
+      (duplicado
+        ? `\n\n⚠️ Já existe uma validação em aberto para esse cliente: ${duplicado.thread}. Se for o mesmo pedido, cancele um deles.`
+        : ''),
+  );
   invalidar();
+  if (duplicado) {
+    await thread
+      .send({
+        content: `⚠️ Possível duplicata de ${duplicado.thread}${duplicado.solicitanteId ? ` (aberto por <@${duplicado.solicitanteId}>)` : ''}.`,
+        allowedMentions: { parse: [] },
+      })
+      .catch((e) => console.error('Aviso de duplicata falhou:', e.message));
+  }
   await avisarHistorico(guild, thread, sistema).catch((e) => console.error('Histórico do sistema falhou:', e.message));
+}
+
+/** Post aberto (🟡 🔵 🟠) mais recente com o mesmo cliente, ou null. */
+async function abertoDoCliente(guild, cliente) {
+  const chave = normalizar(cliente);
+  return (await carregarPosts(guild)).find((r) => STATUS_ABERTOS.includes(r.status) && normalizar(r.cliente) === chave) ?? null;
 }
 
 /** Mostra no post novo como foram as validações anteriores do mesmo sistema. */
