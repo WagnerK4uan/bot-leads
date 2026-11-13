@@ -3,7 +3,7 @@
 **Tipo:** funcionalidade · **Tamanho:** P
 
 ## Problema
-Em `onThreadMessage` ([src/interactions/validacao.js](../src/interactions/validacao.js)), um post 🟠 só volta para 🔵 se quem responder for o **solicitante**:
+Em `onThreadMessage` ([src/interactions/validacao.js](../../src/interactions/validacao.js)), um post 🟠 só volta para 🔵 se quem responder for o **solicitante**:
 
 ```js
 if (!msg || solicitanteDe(msg.embeds[0]) !== message.author.id) return;

@@ -3,7 +3,7 @@
 **Tipo:** correção · **Tamanho:** P
 
 ## Problema
-`agendarLembretes` ([src/jobs/lembretes.js](../src/jobs/lembretes.js)) roda 24/7. As horas são contadas só no expediente, mas o envio não: um post parado desde 14h já tem mais de 2 h úteis às 20h, e o "⏰" sai à noite ou no fim de semana.
+`agendarLembretes` ([src/jobs/lembretes.js](../../src/jobs/lembretes.js)) roda 24/7. As horas são contadas só no expediente, mas o envio não: um post parado desde 14h já tem mais de 2 h úteis às 20h, e o "⏰" sai à noite ou no fim de semana.
 
 ## Comportamento esperado
 A varredura só envia lembretes em dia útil, entre `EXPEDIENTE_INICIO` e `EXPEDIENTE_FIM`. O que acumulou fora do horário é cobrado na primeira varredura do expediente seguinte.

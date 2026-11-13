@@ -3,7 +3,7 @@
 **Tipo:** robustez · **Tamanho:** P
 
 ## Problema
-[src/index.js](../src/index.js) não tem `client.on('error')` nem handlers de processo. Alguns casos derrubam o bot ou deixam erro sem log:
+[src/index.js](../../src/index.js) não tem `client.on('error')` nem handlers de processo. Alguns casos derrubam o bot ou deixam erro sem log:
 - O handler `ClientReady` é `async`. Se `guild.commands.set` falhar, vira uma rejeição não tratada, e no Node ≥ 15 isso encerra o processo.
 - Um evento `error` do client sem listener lança exceção.
 

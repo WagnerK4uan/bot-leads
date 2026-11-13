@@ -3,7 +3,7 @@
 **Tipo:** robustez · **Tamanho:** P
 
 ## Problema
-`emExpediente` em [src/util.js](../src/util.js) só conhece sábado e domingo. Em feriado:
+`emExpediente` em [src/util.js](../../src/util.js) só conhece sábado e domingo. Em feriado:
 - o SLA conta horas, e os lembretes cobram o time;
 - o tempo de análise (métricas e, depois da spec 03, o post) fica inflado;
 - o fechamento mensal pode sair num feriado (ex.: 1º de janeiro).

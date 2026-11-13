@@ -5,7 +5,7 @@
 ## Problema
 O campo "Tempo de validação" do post usa minutos de relógio. Já `/relatorio` e `/metricas` usam horas úteis descontando as pausas.
 
-- Post: `tempoDesdeAssumida` em [src/interactions/validacao.js](../src/interactions/validacao.js) faz `(agora - inicio)/60000 - minutosPausados(...)`.
+- Post: `tempoDesdeAssumida` em [src/interactions/validacao.js](../../src/interactions/validacao.js) faz `(agora - inicio)/60000 - minutosPausados(...)`.
 - Métricas: `horasUteisSemPausa(r.assumidaEm, r.finalizadaEm, r.pausas)` em `src/commands/relatorio.js` e `src/metricasMes.js`.
 
 Exemplo: assumida na sexta às 17h e aprovada na segunda às 9h aparece como ~3.840 min no post e ~2 h nas métricas. O Comercial e a Gestão veem números diferentes para a mesma validação.

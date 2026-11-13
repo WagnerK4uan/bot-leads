@@ -3,7 +3,7 @@
 **Tipo:** correção · **Tamanho:** P
 
 ## Problema
-Em `onModal` ([src/interactions/validacao.js](../src/interactions/validacao.js)), aprovar e reprovar gravam `[CAMPO.responsavel, `${u}`]`, ou seja, quem clicou. Se a Gestão (ou um colega) finalizar um post que outra pessoa assumiu e analisou, o crédito e o tempo vão para quem clicou, em `/relatorio` e `/metricas`.
+Em `onModal` ([src/interactions/validacao.js](../../src/interactions/validacao.js)), aprovar e reprovar gravam `[CAMPO.responsavel, `${u}`]`, ou seja, quem clicou. Se a Gestão (ou um colega) finalizar um post que outra pessoa assumiu e analisou, o crédito e o tempo vão para quem clicou, em `/relatorio` e `/metricas`.
 
 O "Pedir info" já faz o certo: mantém `responsavelDe(atual)` quando existe.
 

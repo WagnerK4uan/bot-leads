@@ -3,7 +3,7 @@
 **Tipo:** correção · **Tamanho:** P
 
 ## Problema
-Em [src/jobs/lembretes.js](../src/jobs/lembretes.js), um post 🔵 Em análise com o tempo pausado nunca é cobrado:
+Em [src/jobs/lembretes.js](../../src/jobs/lembretes.js), um post 🔵 Em análise com o tempo pausado nunca é cobrado:
 
 ```js
 if (status === 'analise' && embed && emPausa(embed)) continue;
