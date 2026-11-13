@@ -77,6 +77,12 @@ export function horasUteis(inicio, fim = new Date()) {
   return total / 3_600_000;
 }
 
+/** Horas úteis entre as datas descontando as pausas (pausa aberta conta até `fim`). */
+export function horasUteisSemPausa(inicio, fim, pausas = []) {
+  const pausado = pausas.reduce((s, p) => s + horasUteis(p.inicio, p.fim ?? fim), 0);
+  return Math.max(0, horasUteis(inicio, fim) - pausado);
+}
+
 export function idade(date) {
   const min = Math.floor((Date.now() - date.getTime()) / 60000);
   if (min < 60) return `${min} min`;

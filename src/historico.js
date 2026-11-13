@@ -1,5 +1,5 @@
 import { STATUS } from './config.js';
-import { CAMPO, assumidaEm, dataDoCampo, responsavelDe, solicitanteDe } from './post.js';
+import { CAMPO, assumidaEm, dataDoCampo, pausasDe, responsavelDe, solicitanteDe } from './post.js';
 import { findForum, statusDoPost } from './util.js';
 
 /**
@@ -46,6 +46,7 @@ function lerEmbed(embed) {
     solicitanteId: solicitanteDe(embed),
     responsavelId: responsavelDe(embed),
     assumidaEm: assumida,
+    pausas: pausasDe(embed),
     finalizadaEm: finalizada,
     metodo: campo(embed, CAMPO.metodo),
     virada: campo(embed, CAMPO.virada),

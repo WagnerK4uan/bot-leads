@@ -2,7 +2,7 @@ import { ChannelType, EmbedBuilder } from 'discord.js';
 import { STATUS_ABERTOS, STATUS } from './config.js';
 import { fmtHoras, media } from './commands/relatorio.js';
 import { carregarPosts } from './historico.js';
-import { findChannel, horasUteis, idade, partes } from './util.js';
+import { findChannel, horasUteisSemPausa, idade, partes } from './util.js';
 
 const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 const MAX_PENDENTES = 10;
@@ -37,7 +37,7 @@ export function calcularMes(registros, chave) {
   let semTempo = 0;
 
   for (const r of finalizadas) {
-    const h = r.assumidaEm ? horasUteis(r.assumidaEm, r.finalizadaEm) : null;
+    const h = r.assumidaEm ? horasUteisSemPausa(r.assumidaEm, r.finalizadaEm, r.pausas) : null;
     if (h === null) semTempo++;
     else tempos.push(h);
     if (r.responsavelId) {

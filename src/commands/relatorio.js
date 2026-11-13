@@ -1,7 +1,7 @@
 import { EmbedBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js';
 import { STATUS } from '../config.js';
 import { carregarPosts } from '../historico.js';
-import { efemero, hasRole, horasUteis } from '../util.js';
+import { efemero, hasRole, horasUteis, horasUteisSemPausa } from '../util.js';
 
 const DIA = 24 * 3_600_000;
 
@@ -49,7 +49,7 @@ export function calcularMetricas(registros, desde = null) {
       const p = responsaveis.get(r.responsavelId) ?? { aprovado: 0, reprovado: 0, horas: [] };
       p[r.status]++;
       if (r.assumidaEm && r.finalizadaEm) {
-        const h = horasUteis(r.assumidaEm, r.finalizadaEm);
+        const h = horasUteisSemPausa(r.assumidaEm, r.finalizadaEm, r.pausas);
         p.horas.push(h);
         analise.push(h);
       }

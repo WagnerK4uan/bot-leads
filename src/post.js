@@ -17,6 +17,7 @@ export const CAMPO = {
   tempo: 'Tempo de validação',
   tempoLegado: 'Tempo até aprovação', // nome antigo do campo, ainda presente em posts aprovados antes da troca
   finalizada: 'Finalizada em',
+  pausas: 'Pausas',
 };
 
 export function embedInicial({ cliente, sistema, acesso, dados, obs, solicitanteId }) {
@@ -77,7 +78,40 @@ export const assumidaEm = (embed) => dataDoCampo(embed, CAMPO.assumida);
 
 export const carimbo = (date) => `<t:${Math.floor(date.getTime() / 1000)}:f>`;
 
-export function botoes(status) {
+const EM_PAUSA = 'em pausa';
+
+/** Intervalos do campo "Pausas": uma linha "⏸️ <t:inicio:f> → <t:fim:t>" ou "→ em pausa" se aberta. */
+export function pausasDe(embed) {
+  const f = embed.fields?.find((x) => x.name === CAMPO.pausas);
+  if (!f) return [];
+  return f.value
+    .split('\n')
+    .map((linha) => {
+      const [inicio, fim] = [...linha.matchAll(/<t:(\d+)/g)].map((m) => new Date(Number(m[1]) * 1000));
+      return inicio ? { inicio, fim: fim ?? null } : null;
+    })
+    .filter(Boolean);
+}
+
+export const emPausa = (embed) => pausasDe(embed).at(-1)?.fim === null;
+
+/** Texto do campo "Pausas", ou null (remove o campo) se não houver pausas. */
+export function textoPausas(pausas) {
+  if (!pausas.length) return null;
+  return pausas
+    .map((p) => `⏸️ ${carimbo(p.inicio)} → ${p.fim ? `<t:${Math.floor(p.fim.getTime() / 1000)}:t>` : EM_PAUSA}`)
+    .join('\n');
+}
+
+/** Minutos de relógio pausados; pausa aberta conta até `ate`. */
+export const minutosPausados = (pausas, ate = new Date()) =>
+  pausas.reduce((s, p) => s + Math.max(0, ((p.fim ?? ate).getTime() - p.inicio.getTime()) / 60000), 0);
+
+/** Fecha a pausa aberta (se houver) em `quando`. */
+export const fecharPausa = (pausas, quando = new Date()) =>
+  pausas.map((p) => (p.fim === null ? { ...p, fim: quando } : p));
+
+export function botoes(status, pausado = false) {
   const finalizado = status === 'aprovado' || status === 'reprovado';
   if (finalizado) {
     return [
@@ -89,6 +123,14 @@ export function botoes(status) {
   return [
     new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId('val:assumir').setLabel('Assumir').setEmoji('🙋').setStyle(ButtonStyle.Secondary).setDisabled(status === 'analise'),
+      pausado
+        ? new ButtonBuilder().setCustomId('val:retomar').setLabel('Retomar').setEmoji('▶️').setStyle(ButtonStyle.Success)
+        : new ButtonBuilder()
+            .setCustomId('val:pausar')
+            .setLabel('Pausar')
+            .setEmoji('⏸️')
+            .setStyle(ButtonStyle.Secondary)
+            .setDisabled(status === 'aguardando'),
       new ButtonBuilder().setCustomId('val:aprovar').setLabel('Aprovar').setEmoji('✅').setStyle(ButtonStyle.Success),
       new ButtonBuilder().setCustomId('val:info').setLabel('Pedir info').setEmoji('❓').setStyle(ButtonStyle.Primary),
       new ButtonBuilder().setCustomId('val:reprovar').setLabel('Reprovar').setEmoji('⛔').setStyle(ButtonStyle.Danger),

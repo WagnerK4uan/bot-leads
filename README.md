@@ -3,7 +3,7 @@
 Organiza o servidor onde o **Comercial** pede e a **Importação** valida se dá para importar os dados do sistema antigo de um lead.
 
 - `/validacao` abre um formulário (Cliente, Sistema, Acesso, Dados, Observações) e cria um **post padronizado no fórum `#validacoes`** com status 🟡.
-- Botões no post (só Importação/Gestão): **🙋 Assumir**, **✅ Aprovar** (virada de chave + método), **❓ Pedir info**, **⛔ Reprovar**, **↩️ Reabrir**.
+- Botões no post (só Importação/Gestão): **🙋 Assumir**, **⏸️ Pausar / ▶️ Retomar** (só Importação; o tempo pausado não conta), **✅ Aprovar** (virada de chave + método), **❓ Pedir info**, **⛔ Reprovar**, **↩️ Reabrir**.
 - O solicitante é mencionado em cada resposta; quando ele responde um post 🟠, o post volta sozinho para 🟡.
 - Lembrete automático para posts parados há mais de `SLA_HORAS` horas úteis (seg–sex, 8h–18h).
 - `/pendentes` lista a fila em aberto.

@@ -8,7 +8,22 @@ import {
 import { STATUS } from '../config.js';
 import { registrarLog } from '../log.js';
 import { invalidar } from '../historico.js';
-import { CAMPO, assumidaEm, botoes, carimbo, comCampo, comStatus, responsavelDe, solicitanteDe, statusTexto } from '../post.js';
+import {
+  CAMPO,
+  assumidaEm,
+  botoes,
+  carimbo,
+  comCampo,
+  comStatus,
+  emPausa,
+  fecharPausa,
+  minutosPausados,
+  pausasDe,
+  responsavelDe,
+  solicitanteDe,
+  statusTexto,
+  textoPausas,
+} from '../post.js';
 import { efemero, findRole, hasRole, setStatus, statusDoPost } from '../util.js';
 
 const texto = (id, label, { required = true, placeholder, short = false, description } = {}) => {
@@ -65,10 +80,17 @@ async function starterDe(thread) {
   return msg;
 }
 
-/** Início ("Assumida em", ou agora se ninguém assumiu) e minutos até agora, para aprovar/reprovar. */
+/**
+ * Início ("Assumida em", ou agora se ninguém assumiu), pausas (a aberta é fechada agora) e minutos
+ * até agora descontando as pausas, para aprovar/reprovar.
+ */
 async function tempoDesdeAssumida(interaction, thread) {
-  const inicio = assumidaEm((interaction.message ?? (await starterDe(thread))).embeds[0]) ?? new Date();
-  return { inicio, tempo: `${Math.round((Date.now() - inicio.getTime()) / 60000)} min` };
+  const embed = (interaction.message ?? (await starterDe(thread))).embeds[0];
+  const agora = new Date();
+  const inicio = assumidaEm(embed) ?? agora;
+  const pausas = fecharPausa(pausasDe(embed), agora);
+  const min = Math.max(0, (agora.getTime() - inicio.getTime()) / 60000 - minutosPausados(pausas, agora));
+  return { inicio, pausas, tempo: `${Math.round(min)} min` };
 }
 
 /** Aplica status + campos no post e devolve o embed atualizado. */
@@ -81,7 +103,7 @@ async function atualizarPost(interaction, status, campos) {
   for (const [nome, valor, inline] of campos) embed = comCampo(embed, nome, valor, inline);
 
   await setStatus(thread, thread.parent, status);
-  const payload = { embeds: [embed], components: botoes(status) };
+  const payload = { embeds: [embed], components: botoes(status, emPausa(embed.data)) };
   if (interaction.message) await interaction.update(payload);
   else await msg.edit(payload);
   invalidar(thread.id);
@@ -98,6 +120,9 @@ function avisarSolicitante(thread, embed, texto) {
 
 export async function onButton(interaction) {
   const acao = interaction.customId.split(':')[1];
+  if ((acao === 'pausar' || acao === 'retomar') && !hasRole(interaction.member, 'importacao')) {
+    return interaction.reply(efemero('Só o time de **Importação** pode pausar ou retomar o tempo.'));
+  }
   if (!hasRole(interaction.member, 'importacao', 'gestao')) {
     return interaction.reply(efemero('Só o time de **Importação** pode validar. Se tiver algo a acrescentar, escreva aqui no post.'));
   }
@@ -112,6 +137,23 @@ export async function onButton(interaction) {
       [CAMPO.assumida, carimbo(desde), true],
     ]);
     await thread.send({ content: `🙋 ${u} assumiu esta validação.`, allowedMentions: { parse: [] } });
+  } else if (acao === 'pausar' || acao === 'retomar') {
+    const pausas = pausasDe(interaction.message.embeds[0]);
+    const pausado = pausas.at(-1)?.fim === null;
+    if ((acao === 'pausar') === pausado) {
+      return interaction.reply(efemero(pausado ? 'O tempo já está pausado.' : 'O tempo não está pausado.'));
+    }
+    const agora = new Date();
+    const novas = acao === 'pausar' ? [...pausas, { inicio: agora, fim: null }] : fecharPausa(pausas, agora);
+    await atualizarPost(interaction, statusDoPost(thread, thread.parent), [[CAMPO.pausas, textoPausas(novas)]]);
+    if (acao === 'pausar') {
+      await thread.send({ content: `⏸️ ${u} pausou o tempo desta validação.`, allowedMentions: { parse: [] } });
+      await registrarLog(interaction.guild, `⏸️ **Pausada** ${thread} — por ${u}`);
+    } else {
+      const min = Math.round((agora.getTime() - pausas.at(-1).inicio.getTime()) / 60000);
+      await thread.send({ content: `▶️ ${u} retomou o tempo (ficou pausado ${min} min).`, allowedMentions: { parse: [] } });
+      await registrarLog(interaction.guild, `▶️ **Retomada** ${thread} — por ${u} (pausada ${min} min)`);
+    }
   } else if (acao === 'reabrir') {
     const atual = statusDoPost(thread, thread.parent);
     await atualizarPost(interaction, 'aguardando', [
@@ -120,6 +162,7 @@ export async function onButton(interaction) {
       [CAMPO.tempo, null],
       [CAMPO.tempoLegado, null],
       [CAMPO.finalizada, null],
+      [CAMPO.pausas, null],
     ]);
     await thread.setAutoArchiveDuration(10080);
     const importacao = findRole(interaction.guild, 'importacao');
@@ -141,7 +184,7 @@ export async function onModal(interaction) {
     const virada = f.getStringSelectValues('virada')[0];
     const metodo = f.getTextInputValue('metodo').trim();
     const obs = f.getTextInputValue('obs')?.trim();
-    const { inicio, tempo } = await tempoDesdeAssumida(interaction, thread);
+    const { inicio, pausas, tempo } = await tempoDesdeAssumida(interaction, thread);
     const embed = await atualizarPost(interaction, 'aprovado', [
       [CAMPO.responsavel, `${u}`, true],
       [CAMPO.assumida, carimbo(inicio), true],
@@ -151,6 +194,7 @@ export async function onModal(interaction) {
       [CAMPO.tempo, tempo, true],
       [CAMPO.tempoLegado, null],
       [CAMPO.finalizada, carimbo(new Date()), true],
+      [CAMPO.pausas, textoPausas(pausas)],
     ]);
     await avisarSolicitante(
       thread,
@@ -161,7 +205,7 @@ export async function onModal(interaction) {
     await registrarLog(interaction.guild, `🟢 **Aprovada** ${thread} — por ${u} (${tempo} desde assumida)`);
   } else if (acao === 'reprovar') {
     const motivo = f.getTextInputValue('motivo').trim();
-    const { inicio, tempo } = await tempoDesdeAssumida(interaction, thread);
+    const { inicio, pausas, tempo } = await tempoDesdeAssumida(interaction, thread);
     const embed = await atualizarPost(interaction, 'reprovado', [
       [CAMPO.responsavel, `${u}`, true],
       [CAMPO.assumida, carimbo(inicio), true],
@@ -169,6 +213,7 @@ export async function onModal(interaction) {
       [CAMPO.tempo, tempo, true],
       [CAMPO.tempoLegado, null],
       [CAMPO.finalizada, carimbo(new Date()), true],
+      [CAMPO.pausas, textoPausas(pausas)],
     ]);
     await avisarSolicitante(
       thread,
@@ -210,7 +255,7 @@ export async function onThreadMessage(message) {
   const status = responsavelId ? 'analise' : 'aguardando';
   const embed = comCampo(comStatus(msg.embeds[0], status), CAMPO.motivo, null);
   await setStatus(thread, thread.parent, status);
-  await msg.edit({ embeds: [embed], components: botoes(status) });
+  await msg.edit({ embeds: [embed], components: botoes(status, emPausa(embed.data)) });
   invalidar(thread.id);
 
   if (responsavelId) {

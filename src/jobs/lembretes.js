@@ -1,6 +1,6 @@
 import { env } from '../config.js';
 import { postsAbertos } from '../commands/pendentes.js';
-import { responsavelDe, solicitanteDe } from '../post.js';
+import { emPausa, responsavelDe, solicitanteDe } from '../post.js';
 import { findRole, horasUteis } from '../util.js';
 
 /**
@@ -20,6 +20,8 @@ export async function verificarPendentes(guild) {
 
       const starter = await thread.fetchStarterMessage().catch(() => null);
       const embed = starter?.embeds[0];
+      // Tempo pausado pela Importação: não cobra "sem atualização".
+      if (status === 'analise' && embed && emPausa(embed)) continue;
       const h = `${Math.floor(horas)} h úteis`;
 
       if (status === 'info') {
