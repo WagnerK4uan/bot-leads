@@ -6,7 +6,7 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
-import { DADOS, STATUS } from '../config.js';
+import { DADOS, MOTIVOS_REPROVACAO, STATUS } from '../config.js';
 import { registrarLog } from '../log.js';
 import { invalidar } from '../historico.js';
 import { modalValidacao } from '../commands/validacao.js';
@@ -75,7 +75,17 @@ const MODAIS = {
     new ModalBuilder()
       .setCustomId('valm:reprovar')
       .setTitle('Reprovar validação')
-      .addLabelComponents(texto('motivo', 'Motivo', { placeholder: 'Por que não é possível importar?' })),
+      .addLabelComponents(
+        new LabelBuilder()
+          .setLabel('Categoria')
+          .setStringSelectMenuComponent(
+            new StringSelectMenuBuilder()
+              .setCustomId('categoria')
+              .setPlaceholder('Por que não é possível importar?')
+              .addOptions(MOTIVOS_REPROVACAO.map((m) => ({ label: m.label, value: m.value }))),
+          ),
+        texto('motivo', 'Detalhes', { required: false, placeholder: 'Obrigatório se a categoria for "Outro"' }),
+      ),
   info: () =>
     new ModalBuilder()
       .setCustomId('valm:info')
@@ -251,6 +261,7 @@ async function executarBotao(interaction, acao, thread) {
       [CAMPO.finalizada, null],
       [CAMPO.pausas, null],
       [CAMPO.motivo, null],
+      [CAMPO.categoria, null],
     ]);
     await thread.setAutoArchiveDuration(10080);
     const importacao = findRole(interaction.guild, 'importacao');
@@ -304,13 +315,21 @@ async function executarModal(interaction, acao, thread) {
     await thread.setAutoArchiveDuration(1440);
     await registrarLog(interaction.guild, `🟢 **Aprovada** ${thread} — ${porQuem(u, respId)} (${tempo} desde assumida)`);
   } else if (acao === 'reprovar') {
-    const motivo = f.getTextInputValue('motivo').trim();
+    const valorCategoria = f.getStringSelectValues('categoria')[0];
+    const categoria = MOTIVOS_REPROVACAO.find((m) => m.value === valorCategoria)?.label ?? valorCategoria;
+    const detalhe = f.getTextInputValue('motivo')?.trim();
+    // Modal não tem obrigatoriedade condicional: "Outro" exige o detalhe.
+    if (valorCategoria === 'outro' && !detalhe) {
+      return avisar(interaction, 'Com a categoria **Outro**, descreva o motivo em **Detalhes**. Clique em ⛔ Reprovar de novo.');
+    }
+    const motivo = detalhe ? `${categoria} — ${detalhe}` : categoria;
     const { inicio, pausas, tempo } = tempoDesdeAssumida(atual);
     const respId = responsavelDe(atual) ?? u.id;
     const embed = await atualizarPost(thread, msg, 'reprovado', [
       [CAMPO.responsavel, `<@${respId}>`, true],
       [CAMPO.assumida, carimbo(inicio), true],
-      [CAMPO.motivo, motivo],
+      [CAMPO.categoria, categoria, true],
+      [CAMPO.motivo, detalhe || null],
       [CAMPO.tempo, tempo, true],
       [CAMPO.tempoLegado, null],
       [CAMPO.finalizada, carimbo(new Date()), true],

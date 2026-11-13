@@ -1,6 +1,6 @@
 import { ChannelType, EmbedBuilder } from 'discord.js';
 import { STATUS_ABERTOS, STATUS } from './config.js';
-import { fmtHoras, media } from './commands/relatorio.js';
+import { fmtHoras, media, motivosReprovacao, textoMotivos } from './commands/relatorio.js';
 import { carregarPosts } from './historico.js';
 import { findChannel, horasUteisSemPausa, idade, partes } from './util.js';
 
@@ -57,6 +57,7 @@ export function calcularMes(registros, chave) {
   ).length;
 
   return {
+    motivos: motivosReprovacao(finalizadas),
     canceladas,
     aprovadas: finalizadas.filter((r) => r.status === 'aprovado').length,
     reprovadas: finalizadas.filter((r) => r.status === 'reprovado').length,
@@ -96,6 +97,10 @@ export function montarEmbedMes(m, chave) {
         .map((p) => `<@${p.id}> — 🟢 ${p.aprovado} · 🔴 ${p.reprovado} · ⏱️ ${fmtHoras(p.media)}`)
         .join('\n'),
     });
+  }
+
+  if (m.motivos.length) {
+    embed.addFields({ name: 'Motivos de reprovação', value: textoMotivos(m.motivos) });
   }
 
   if (m.pendentes.length) {

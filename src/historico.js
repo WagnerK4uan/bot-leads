@@ -52,6 +52,7 @@ function lerEmbed(embed) {
     metodo: campo(embed, CAMPO.metodo),
     virada: campo(embed, CAMPO.virada),
     motivo: campo(embed, CAMPO.motivo),
+    categoria: campo(embed, CAMPO.categoria),
   };
 }
 
@@ -123,7 +124,8 @@ export const contagemPorStatus = (registros) =>
 
 /** "🟢 #post — Backup Firebird (12/09)" */
 export function linhaHistorico(r) {
-  const detalhe = r.status === 'aprovado' ? r.metodo : r.motivo;
+  const motivo = r.categoria ? [r.categoria, r.motivo].filter(Boolean).join(' — ') : r.motivo;
+  const detalhe = r.status === 'aprovado' ? r.metodo : motivo;
   const quando = `<t:${Math.floor((r.finalizadaEm ?? r.criadoEm).getTime() / 1000)}:d>`;
   return `${STATUS[r.status]?.emoji ?? '⚪'} ${r.thread}${detalhe ? ` — ${detalhe.slice(0, 120)}` : ''} (${quando})`;
 }

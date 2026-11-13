@@ -18,6 +18,7 @@ export const CAMPO = {
   tempoLegado: 'Tempo até aprovação', // nome antigo do campo, ainda presente em posts aprovados antes da troca
   finalizada: 'Finalizada em',
   pausas: 'Pausas',
+  categoria: 'Categoria',
 };
 
 export function embedInicial({ cliente, sistema, acesso, dados, obs, solicitanteId }) {

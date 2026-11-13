@@ -69,6 +69,16 @@ export const STATUS = {
 // Status que ainda dependem do time de importação (entram no lembrete e no /pendentes).
 export const STATUS_ABERTOS = ['aguardando', 'analise', 'info'];
 
+// Categorias do ⛔ Reprovar (contadas em /relatorio, resumo semanal e /metricas). "outro" exige o detalhe.
+export const MOTIVOS_REPROVACAO = [
+  { value: 'sem-acesso', label: 'Sem acesso ao computador/banco' },
+  { value: 'banco-protegido', label: 'Banco de dados protegido/criptografado' },
+  { value: 'sem-exportacao', label: 'Sistema não permite exportar' },
+  { value: 'dados-ruins', label: 'Dados incompletos ou corrompidos' },
+  { value: 'nuvem', label: 'Sistema web/nuvem sem exportação' },
+  { value: 'outro', label: 'Outro' },
+];
+
 export const DADOS = [
   { value: 'clientes', label: 'Clientes', tag: 'Clientes' },
   { value: 'fornecedores', label: 'Fornecedores', tag: 'Fornecedores' },

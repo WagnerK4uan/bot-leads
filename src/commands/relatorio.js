@@ -31,6 +31,21 @@ export function fmtHoras(h) {
 const top = (contagem, n) =>
   [...contagem.entries()].sort((a, b) => b[1] - a[1]).slice(0, n);
 
+export const SEM_CATEGORIA = 'Sem categoria';
+
+/** Top `n` categorias de reprovação ([nome, quantidade]); posts antigos sem categoria contam como "Sem categoria". */
+export function motivosReprovacao(registros, n = 5) {
+  const contagem = new Map();
+  for (const r of registros) {
+    if (r.status !== 'reprovado') continue;
+    const c = r.categoria ?? SEM_CATEGORIA;
+    contagem.set(c, (contagem.get(c) ?? 0) + 1);
+  }
+  return top(contagem, n);
+}
+
+export const textoMotivos = (motivos) => motivos.map(([n, q]) => `${n} — ${q}`).join('\n');
+
 /** Métricas dos registros de carregarPosts() abertos a partir de `desde` (null = todos). */
 export function calcularMetricas(registros, desde = null) {
   const doPeriodo = registros.filter((r) => !desde || r.criadoEm >= desde);
@@ -76,6 +91,7 @@ export function calcularMetricas(registros, desde = null) {
       .sort((a, b) => b.aprovado + b.reprovado - (a.aprovado + a.reprovado)),
     sistemas: top(new Map([...sistemas].map(([k, s]) => [s.nome, s.total])), 5),
     reprovados: top(new Map([...sistemas].filter(([, s]) => s.reprovado).map(([, s]) => [s.nome, s.reprovado])), 3),
+    motivos: motivosReprovacao(doPeriodo),
   };
 }
 
@@ -108,6 +124,9 @@ export function montarEmbedRelatorio(m, titulo) {
   }
   if (m.reprovados.length) {
     embed.addFields({ name: 'Mais reprovados', value: m.reprovados.map(([n, q]) => `${n} — ${q}`).join('\n'), inline: true });
+  }
+  if (m.motivos.length) {
+    embed.addFields({ name: 'Motivos de reprovação', value: textoMotivos(m.motivos) });
   }
   return embed.setFooter({ text: 'Tempos em horas úteis. Análise = de assumida até aprovar/reprovar.' });
 }
