@@ -8,10 +8,14 @@ export const findChannel = (guild, key, type) =>
 
 export const findForum = (guild) => findChannel(guild, 'forum', ChannelType.GuildForum);
 
+/** Permissão: tem um dos cargos ou é Administrador. */
 export function hasRole(member, ...keys) {
   if (member.permissions.has('Administrator')) return true;
-  return keys.some((k) => member.roles.cache.some((r) => r.name === ROLES[k].name));
+  return temCargo(member, ...keys);
 }
+
+/** Só olha os cargos (ignora Administrador): para saber de que time a pessoa é. */
+export const temCargo = (member, ...keys) => keys.some((k) => member.roles.cache.some((r) => r.name === ROLES[k].name));
 
 export function tagId(forum, name) {
   return forum.availableTags.find((t) => t.name === name)?.id;

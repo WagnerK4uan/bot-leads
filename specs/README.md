@@ -18,7 +18,7 @@ As specs ficam em `pendentes/` até serem implementadas; ao finalizar uma, ela �
 | 09 | [Testes com node --test](concluidas/09-testes.md) | Robustez | M | — |
 | 10 | [Comercial cancela o pedido](concluidas/10-cancelar-pedido.md) | Funcionalidade | M | 05, 11 |
 | 11 | [Comercial edita o pedido](concluidas/11-editar-pedido.md) | Funcionalidade | G | 05, 10, 15 |
-| 12 | [Transferir responsável](pendentes/12-transferir-responsavel.md) | Funcionalidade | M | 08 |
+| 12 | [Transferir responsável](concluidas/12-transferir-responsavel.md) | Funcionalidade | M | 08 |
 | 13 | [Aviso de cliente duplicado](pendentes/13-aviso-duplicidade.md) | Funcionalidade | P | — |
 | 14 | [Motivo de reprovação por categoria](pendentes/14-motivo-reprovacao-categorizado.md) | Funcionalidade | M | — |
 | 15 | [Qualquer pessoa do Comercial responde o 🟠](pendentes/15-resposta-de-qualquer-comercial.md) | Funcionalidade | P | 11 |

@@ -69,3 +69,15 @@ test('fmtDuracaoUtil', () => {
   assert.equal(fmtDuracaoUtil(2), '2 h úteis');
   assert.equal(fmtDuracaoUtil(2 + 10 / 60), '2 h 10 min úteis');
 });
+
+test('temCargo ignora Administrador; hasRole não', async () => {
+  const { hasRole, temCargo } = await import('../src/util.js');
+  const membro = (admin, ...nomes) => ({
+    permissions: { has: () => admin },
+    roles: { cache: nomes.map((name) => ({ name })) },
+  });
+  assert.equal(temCargo(membro(true), 'importacao'), false);
+  assert.equal(hasRole(membro(true), 'importacao'), true);
+  assert.equal(temCargo(membro(false, 'Importação'), 'importacao'), true);
+  assert.equal(temCargo(membro(false, 'Comercial'), 'importacao', 'gestao'), false);
+});

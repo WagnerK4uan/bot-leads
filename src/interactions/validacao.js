@@ -102,7 +102,7 @@ async function starterDe(thread) {
  * cliques quase juntos leem o mesmo embed e o segundo sobrescreve o primeiro.
  */
 const travas = new Map(); // threadId -> Promise
-async function emFila(threadId, fn) {
+export async function emFila(threadId, fn) {
   const anterior = travas.get(threadId) ?? Promise.resolve();
   const atual = anterior.catch(() => {}).then(fn);
   travas.set(threadId, atual);
@@ -114,7 +114,7 @@ async function emFila(threadId, fn) {
 }
 
 /** Estado atual do post direto da API: status pelas tags e a mensagem inicial com o embed. */
-async function estadoFresco(thread) {
+export async function estadoFresco(thread) {
   await thread.fetch(); // appliedTags do cache pode estar desatualizado
   const msg = await starterDe(thread);
   return { msg, embed: msg.embeds[0], status: statusDoPost(thread, thread.parent) };
@@ -151,7 +151,7 @@ function tempoDesdeAssumida(embed) {
 const porQuem = (u, respId) => `por ${u}${respId !== u.id ? ` (responsável: <@${respId}>)` : ''}`;
 
 /** Aplica status + campos no post a partir do embed fresco e devolve o embed atualizado. */
-async function atualizarPost(thread, msg, status, campos) {
+export async function atualizarPost(thread, msg, status, campos) {
   // O Discord recusa troca de tags em post arquivado.
   if (thread.archived) await thread.setArchived(false);
   let embed = comStatus(msg.embeds[0], status);
