@@ -1,7 +1,7 @@
 import { env } from '../config.js';
 import { postsAbertos } from '../commands/pendentes.js';
 import { emPausa, responsavelDe, solicitanteDe } from '../post.js';
-import { findRole, horasUteis } from '../util.js';
+import { emExpediente, findRole, horasUteis } from '../util.js';
 
 /**
  * Cobra posts parados há mais de SLA_HORAS úteis (SLA_PAUSA_HORAS se o tempo estiver pausado). A própria mensagem de lembrete vira a
@@ -61,6 +61,8 @@ export async function verificarPendentes(guild) {
 
 export function agendarLembretes(client) {
   const rodar = () => {
+    // Fora do expediente nada é enviado; o que venceu nesse intervalo sai na primeira varredura do expediente seguinte.
+    if (!emExpediente(new Date())) return;
     for (const guild of client.guilds.cache.values()) {
       verificarPendentes(guild).catch((e) => console.error('Varredura de pendentes falhou:', e.message));
     }

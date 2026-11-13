@@ -5,7 +5,7 @@ Organiza o servidor onde o **Comercial** pede e a **Importação** valida se dá
 - `/validacao` abre um formulário (Cliente, Sistema, Acesso, Dados, Observações) e cria um **post padronizado no fórum `#validacoes`** com status 🟡.
 - Botões no post (só Importação/Gestão): **🙋 Assumir**, **⏸️ Pausar / ▶️ Retomar** (só Importação; o tempo pausado não conta), **✅ Aprovar** (virada de chave + método), **❓ Pedir info**, **⛔ Reprovar**, **↩️ Reabrir**.
 - O solicitante é mencionado em cada resposta; quando ele responde um post 🟠, o post volta sozinho para 🟡.
-- Lembrete automático para posts parados há mais de `SLA_HORAS` horas úteis (seg–sex, 8h–18h). Post com o tempo pausado há mais de `SLA_PAUSA_HORAS` horas úteis recebe um lembrete de pausa para o responsável.
+- Lembrete automático para posts parados há mais de `SLA_HORAS` horas úteis (seg–sex, 8h–18h), enviado só dentro do expediente — o que vence à noite ou no fim de semana é cobrado na primeira varredura do próximo dia útil. Post com o tempo pausado há mais de `SLA_PAUSA_HORAS` horas úteis recebe um lembrete de pausa para o responsável.
 - `/pendentes` lista a fila em aberto.
 - `/relatorio [periodo]` (Gestão/Importação): volume por status, taxa de aprovação, tempo médio até assumir e de análise (horas úteis), números por responsável e sistemas mais pedidos/reprovados.
 - Resumo semanal: toda segunda, no início do expediente, o mesmo relatório dos últimos 7 dias sai em `#gestao`.

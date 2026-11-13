@@ -61,7 +61,7 @@ export function partes(date) {
   return { weekday: get('weekday'), hour: Number(get('hour')), dia: `${get('year')}-${get('month')}-${get('day')}` };
 }
 
-function emExpediente(date) {
+export function emExpediente(date) {
   const { weekday, hour } = partes(date);
   if (weekday === 'Sat' || weekday === 'Sun') return false;
   return hour >= env.expedienteInicio && hour < env.expedienteFim;

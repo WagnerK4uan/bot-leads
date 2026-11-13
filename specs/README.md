@@ -8,7 +8,7 @@ As specs ficam em `pendentes/` até serem implementadas; ao finalizar uma, ela �
 | # | Spec | Tipo | Tamanho | Depende de / conversa com |
 |---|---|---|---|---|
 | 01 | [Pausa esquecida também gera lembrete](concluidas/01-lembrete-pausa-esquecida.md) | Correção | P | 02 |
-| 02 | [Lembretes só no expediente](pendentes/02-lembretes-so-no-expediente.md) | Correção | P | 07 |
+| 02 | [Lembretes só no expediente](concluidas/02-lembretes-so-no-expediente.md) | Correção | P | 07 |
 | 03 | [Tempo do post em horas úteis](pendentes/03-tempo-em-horas-uteis.md) | Correção | M | 09 (testes), 04 |
 | 04 | [Aprovar/Reprovar mantém o responsável](pendentes/04-manter-responsavel-ao-finalizar.md) | Correção | P | 03 |
 | 05 | [Ocultar acesso/senha ao finalizar](pendentes/05-ocultar-acesso-ao-finalizar.md) | Segurança | P | 10, 11 |
