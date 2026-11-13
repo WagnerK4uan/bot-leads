@@ -8,6 +8,8 @@ export const env = {
   guildId: process.env.GUILD_ID,
   // Horas úteis sem resposta antes de cobrar o time de importação.
   slaHoras: num(process.env.SLA_HORAS, 2),
+  // Horas úteis com o tempo pausado antes de lembrar o responsável de retomar.
+  slaPausaHoras: num(process.env.SLA_PAUSA_HORAS, 8),
   // Intervalo da varredura de pendentes, em minutos.
   lembreteIntervaloMin: num(process.env.LEMBRETE_INTERVALO_MIN, 30),
   expedienteInicio: num(process.env.EXPEDIENTE_INICIO, 8),

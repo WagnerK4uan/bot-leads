@@ -4,7 +4,7 @@ import { emPausa, responsavelDe, solicitanteDe } from '../post.js';
 import { findRole, horasUteis } from '../util.js';
 
 /**
- * Cobra posts parados há mais de SLA_HORAS úteis. A própria mensagem de lembrete vira a
+ * Cobra posts parados há mais de SLA_HORAS úteis (SLA_PAUSA_HORAS se o tempo estiver pausado). A própria mensagem de lembrete vira a
  * "última mensagem" do post, então a próxima cobrança só sai depois de outro SLA inteiro.
  */
 export async function verificarPendentes(guild) {
@@ -16,13 +16,24 @@ export async function verificarPendentes(guild) {
       const [ultima] = (await thread.messages.fetch({ limit: 1 })).values();
       const desde = ultima?.createdAt ?? thread.createdAt;
       const horas = horasUteis(desde);
-      if (horas < env.slaHoras) continue;
+      // Antes de ler o post, só descarta o que está abaixo do menor dos dois prazos.
+      if (horas < Math.min(env.slaHoras, env.slaPausaHoras)) continue;
 
       const starter = await thread.fetchStarterMessage().catch(() => null);
       const embed = starter?.embeds[0];
-      // Tempo pausado pela Importação: não cobra "sem atualização".
-      if (status === 'analise' && embed && emPausa(embed)) continue;
       const h = `${Math.floor(horas)} h úteis`;
+
+      // Tempo pausado pela Importação: tem prazo próprio e mensagem própria, para a pausa não ser esquecida.
+      if (status === 'analise' && embed && emPausa(embed)) {
+        if (horas < env.slaPausaHoras) continue;
+        const id = responsavelDe(embed);
+        await thread.send({
+          content: `⏸️ ${id ? `<@${id}>` : (importacao ?? 'Importação')}, esta validação está pausada há ${h}. Ainda está bloqueada? Retome o tempo ou atualize o post.`,
+          allowedMentions: id ? { users: [id] } : { roles: importacao ? [importacao.id] : [] },
+        });
+        continue;
+      }
+      if (horas < env.slaHoras) continue;
 
       if (status === 'info') {
         const id = embed && solicitanteDe(embed);
