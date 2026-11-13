@@ -10,7 +10,7 @@ As specs ficam em `pendentes/` até serem implementadas; ao finalizar uma, ela �
 | 01 | [Pausa esquecida também gera lembrete](concluidas/01-lembrete-pausa-esquecida.md) | Correção | P | 02 |
 | 02 | [Lembretes só no expediente](concluidas/02-lembretes-so-no-expediente.md) | Correção | P | 07 |
 | 03 | [Tempo do post em horas úteis](concluidas/03-tempo-em-horas-uteis.md) | Correção | M | 09 (testes), 04 |
-| 04 | [Aprovar/Reprovar mantém o responsável](pendentes/04-manter-responsavel-ao-finalizar.md) | Correção | P | 03 |
+| 04 | [Aprovar/Reprovar mantém o responsável](concluidas/04-manter-responsavel-ao-finalizar.md) | Correção | P | 03 |
 | 05 | [Ocultar acesso/senha ao finalizar](pendentes/05-ocultar-acesso-ao-finalizar.md) | Segurança | P | 10, 11 |
 | 06 | [Proteção contra crash](pendentes/06-protecao-contra-crash.md) | Robustez | P | — |
 | 07 | [Feriados no cálculo de horas úteis](pendentes/07-feriados.md) | Robustez | P | 02, 09 |
