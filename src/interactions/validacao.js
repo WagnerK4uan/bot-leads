@@ -1,5 +1,6 @@
 import {
   LabelBuilder,
+  MessageFlags,
   ModalBuilder,
   StringSelectMenuBuilder,
   TextInputBuilder,
@@ -74,40 +75,74 @@ const MODAIS = {
 };
 
 async function starterDe(thread) {
-  const msg = await thread.fetchStarterMessage().catch(() => null);
+  // force: o cache pode ter o embed de antes da ação anterior da fila.
+  const msg = await thread.fetchStarterMessage({ force: true }).catch(() => null);
   if (!msg?.embeds[0]) throw new Error('Mensagem inicial do post não encontrada.');
   return msg;
 }
 
 /**
+ * Ações no mesmo post rodam uma de cada vez (o bot roda em uma instância só). Sem isso, dois
+ * cliques quase juntos leem o mesmo embed e o segundo sobrescreve o primeiro.
+ */
+const travas = new Map(); // threadId -> Promise
+async function emFila(threadId, fn) {
+  const anterior = travas.get(threadId) ?? Promise.resolve();
+  const atual = anterior.catch(() => {}).then(fn);
+  travas.set(threadId, atual);
+  try {
+    return await atual;
+  } finally {
+    if (travas.get(threadId) === atual) travas.delete(threadId);
+  }
+}
+
+/** Estado atual do post direto da API: status pelas tags e a mensagem inicial com o embed. */
+async function estadoFresco(thread) {
+  await thread.fetch(); // appliedTags do cache pode estar desatualizado
+  const msg = await starterDe(thread);
+  return { msg, embed: msg.embeds[0], status: statusDoPost(thread, thread.parent) };
+}
+
+const FINALIZADOS = ['aprovado', 'reprovado'];
+const msgFinalizado = (status) => `Este post já foi finalizado (${statusTexto(status)}). Use ↩️ Reabrir.`;
+
+/**
+ * Responde na hora (a interação tem 3 s e a fila pode demorar). Botões e modais vindos do post só
+ * reconhecem o clique; o post é editado com msg.edit e os avisos vão por followUp.
+ */
+async function adiar(interaction) {
+  if (interaction.message) await interaction.deferUpdate();
+  else await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+}
+
+const avisar = (interaction, content) =>
+  interaction.message ? interaction.followUp(efemero(content)) : interaction.editReply(content);
+
+/**
  * Início ("Assumida em", ou agora se ninguém assumiu), pausas (a aberta é fechada agora) e horas
  * úteis até agora descontando as pausas — o mesmo cálculo de /relatorio e /metricas.
  */
-async function tempoDesdeAssumida(interaction, thread) {
-  const embed = (interaction.message ?? (await starterDe(thread))).embeds[0];
+function tempoDesdeAssumida(embed) {
   const agora = new Date();
   const inicio = assumidaEm(embed) ?? agora;
   const pausas = fecharPausa(pausasDe(embed), agora);
   const horas = horasUteisSemPausa(inicio, agora, pausas);
-  return { embed, inicio, pausas, tempo: fmtDuracaoUtil(horas) };
+  return { inicio, pausas, tempo: fmtDuracaoUtil(horas) };
 }
 
 /** "por @X" no log, e "(responsável: @Y)" quando quem finalizou não é o responsável. */
 const porQuem = (u, respId) => `por ${u}${respId !== u.id ? ` (responsável: <@${respId}>)` : ''}`;
 
-/** Aplica status + campos no post e devolve o embed atualizado. */
-async function atualizarPost(interaction, status, campos) {
-  const thread = interaction.channel;
+/** Aplica status + campos no post a partir do embed fresco e devolve o embed atualizado. */
+async function atualizarPost(thread, msg, status, campos) {
   // O Discord recusa troca de tags em post arquivado.
   if (thread.archived) await thread.setArchived(false);
-  const msg = interaction.message ?? (await starterDe(thread));
   let embed = comStatus(msg.embeds[0], status);
   for (const [nome, valor, inline] of campos) embed = comCampo(embed, nome, valor, inline);
 
   await setStatus(thread, thread.parent, status);
-  const payload = { embeds: [embed], components: botoes(status, emPausa(embed.data)) };
-  if (interaction.message) await interaction.update(payload);
-  else await msg.edit(payload);
+  await msg.edit({ embeds: [embed], components: botoes(status, emPausa(embed.data)) });
   invalidar(thread.id);
   return embed;
 }
@@ -128,26 +163,43 @@ export async function onButton(interaction) {
   if (!hasRole(interaction.member, 'importacao', 'gestao')) {
     return interaction.reply(efemero('Só o time de **Importação** pode validar. Se tiver algo a acrescentar, escreva aqui no post.'));
   }
+  // O modal precisa abrir na hora; o estado é conferido de novo quando ele for enviado.
   if (MODAIS[acao]) return interaction.showModal(MODAIS[acao]());
 
   const thread = interaction.channel;
+  await adiar(interaction);
+  return emFila(thread.id, () => executarBotao(interaction, acao, thread));
+}
+
+async function executarBotao(interaction, acao, thread) {
   const u = interaction.user;
+  const { msg, embed: atual, status } = await estadoFresco(thread);
+  const finalizado = FINALIZADOS.includes(status);
+
+  if (acao === 'reabrir') {
+    if (!finalizado) return avisar(interaction, `Este post já está aberto (${statusTexto(status ?? 'aguardando')}).`);
+  } else if (finalizado) {
+    return avisar(interaction, msgFinalizado(status));
+  }
+
   if (acao === 'assumir') {
-    const desde = assumidaEm(interaction.message.embeds[0]) ?? new Date();
-    await atualizarPost(interaction, 'analise', [
+    const respId = responsavelDe(atual);
+    if (status === 'analise' && respId) return avisar(interaction, `Já assumida por <@${respId}>.`);
+    const desde = assumidaEm(atual) ?? new Date();
+    await atualizarPost(thread, msg, 'analise', [
       [CAMPO.responsavel, `${u}`, true],
       [CAMPO.assumida, carimbo(desde), true],
     ]);
     await thread.send({ content: `🙋 ${u} assumiu esta validação.`, allowedMentions: { parse: [] } });
   } else if (acao === 'pausar' || acao === 'retomar') {
-    const pausas = pausasDe(interaction.message.embeds[0]);
+    const pausas = pausasDe(atual);
     const pausado = pausas.at(-1)?.fim === null;
     if ((acao === 'pausar') === pausado) {
-      return interaction.reply(efemero(pausado ? 'O tempo já está pausado.' : 'O tempo não está pausado.'));
+      return avisar(interaction, pausado ? 'O tempo já está pausado.' : 'O tempo não está pausado.');
     }
     const agora = new Date();
     const novas = acao === 'pausar' ? [...pausas, { inicio: agora, fim: null }] : fecharPausa(pausas, agora);
-    await atualizarPost(interaction, statusDoPost(thread, thread.parent), [[CAMPO.pausas, textoPausas(novas)]]);
+    await atualizarPost(thread, msg, status, [[CAMPO.pausas, textoPausas(novas)]]);
     if (acao === 'pausar') {
       await thread.send({ content: `⏸️ ${u} pausou o tempo desta validação.`, allowedMentions: { parse: [] } });
       await registrarLog(interaction.guild, `⏸️ **Pausada** ${thread} — por ${u}`);
@@ -157,8 +209,7 @@ export async function onButton(interaction) {
       await registrarLog(interaction.guild, `▶️ **Retomada** ${thread} — por ${u} (pausada ${min} min)`);
     }
   } else if (acao === 'reabrir') {
-    const atual = statusDoPost(thread, thread.parent);
-    await atualizarPost(interaction, 'aguardando', [
+    await atualizarPost(thread, msg, 'aguardando', [
       [CAMPO.responsavel, null],
       [CAMPO.assumida, null],
       [CAMPO.tempo, null],
@@ -169,7 +220,7 @@ export async function onButton(interaction) {
     await thread.setAutoArchiveDuration(10080);
     const importacao = findRole(interaction.guild, 'importacao');
     await thread.send({
-      content: `↩️ ${u} reabriu a validação (estava ${STATUS[atual]?.emoji ?? ''} ${STATUS[atual]?.label ?? '—'}). ${importacao ?? ''}`,
+      content: `↩️ ${u} reabriu a validação (estava ${STATUS[status]?.emoji ?? ''} ${STATUS[status]?.label ?? '—'}). ${importacao ?? ''}`,
       allowedMentions: { roles: importacao ? [importacao.id] : [] },
     });
     await registrarLog(interaction.guild, `↩️ **Reaberta** ${thread} — por ${u}`);
@@ -179,17 +230,27 @@ export async function onButton(interaction) {
 export async function onModal(interaction) {
   const acao = interaction.customId.split(':')[1];
   const thread = interaction.channel;
+  await adiar(interaction);
+  const aviso = await emFila(thread.id, () => executarModal(interaction, acao, thread));
+  // Modal sem mensagem de origem respondeu com deferReply: fecha o "pensando…".
+  if (!interaction.message && !aviso) await interaction.editReply('Post atualizado.');
+}
+
+async function executarModal(interaction, acao, thread) {
   const u = interaction.user;
   const f = interaction.fields;
+  const { msg, embed: atual, status } = await estadoFresco(thread);
+  // Dois modais enviados quase juntos: o segundo encontra o post já finalizado.
+  if (FINALIZADOS.includes(status)) return avisar(interaction, msgFinalizado(status));
 
   if (acao === 'aprovar') {
     const virada = f.getStringSelectValues('virada')[0];
     const metodo = f.getTextInputValue('metodo').trim();
     const obs = f.getTextInputValue('obs')?.trim();
-    const { embed: atual, inicio, pausas, tempo } = await tempoDesdeAssumida(interaction, thread);
+    const { inicio, pausas, tempo } = tempoDesdeAssumida(atual);
     // Quem assumiu continua responsável (crédito e tempo nas métricas); sem responsável, quem clicou assume.
     const respId = responsavelDe(atual) ?? u.id;
-    const embed = await atualizarPost(interaction, 'aprovado', [
+    const embed = await atualizarPost(thread, msg, 'aprovado', [
       [CAMPO.responsavel, `<@${respId}>`, true],
       [CAMPO.assumida, carimbo(inicio), true],
       [CAMPO.virada, virada, true],
@@ -209,9 +270,9 @@ export async function onModal(interaction) {
     await registrarLog(interaction.guild, `🟢 **Aprovada** ${thread} — ${porQuem(u, respId)} (${tempo} desde assumida)`);
   } else if (acao === 'reprovar') {
     const motivo = f.getTextInputValue('motivo').trim();
-    const { embed: atual, inicio, pausas, tempo } = await tempoDesdeAssumida(interaction, thread);
+    const { inicio, pausas, tempo } = tempoDesdeAssumida(atual);
     const respId = responsavelDe(atual) ?? u.id;
-    const embed = await atualizarPost(interaction, 'reprovado', [
+    const embed = await atualizarPost(thread, msg, 'reprovado', [
       [CAMPO.responsavel, `<@${respId}>`, true],
       [CAMPO.assumida, carimbo(inicio), true],
       [CAMPO.motivo, motivo],
@@ -230,9 +291,8 @@ export async function onModal(interaction) {
   } else if (acao === 'info') {
     const motivo = f.getTextInputValue('motivo').trim();
     // Pedir info conta como assumir: mantém o responsável e o início do tempo, ou assume agora.
-    const atual = (interaction.message ?? (await starterDe(thread))).embeds[0];
     const responsavelId = responsavelDe(atual);
-    const embed = await atualizarPost(interaction, 'info', [
+    const embed = await atualizarPost(thread, msg, 'info', [
       [CAMPO.responsavel, responsavelId ? `<@${responsavelId}>` : `${u}`, true],
       [CAMPO.assumida, carimbo(assumidaEm(atual) ?? new Date()), true],
       [CAMPO.motivo, `Pendente: ${motivo}`],
@@ -252,13 +312,18 @@ export async function onModal(interaction) {
  */
 export async function onThreadMessage(message) {
   const thread = message.channel;
+  // Filtro barato pelo cache; o estado é conferido de novo dentro da fila.
   if (statusDoPost(thread, thread.parent) !== 'info') return;
-  const msg = await starterDe(thread).catch(() => null);
-  if (!msg || solicitanteDe(msg.embeds[0]) !== message.author.id) return;
+  await emFila(thread.id, () => voltarParaAnalise(message, thread));
+}
 
-  const responsavelId = responsavelDe(msg.embeds[0]);
+async function voltarParaAnalise(message, thread) {
+  const { msg, embed: atual, status: statusAtual } = await estadoFresco(thread).catch(() => ({}));
+  if (statusAtual !== 'info' || solicitanteDe(atual) !== message.author.id) return;
+
+  const responsavelId = responsavelDe(atual);
   const status = responsavelId ? 'analise' : 'aguardando';
-  const embed = comCampo(comStatus(msg.embeds[0], status), CAMPO.motivo, null);
+  const embed = comCampo(comStatus(atual, status), CAMPO.motivo, null);
   await setStatus(thread, thread.parent, status);
   await msg.edit({ embeds: [embed], components: botoes(status, emPausa(embed.data)) });
   invalidar(thread.id);

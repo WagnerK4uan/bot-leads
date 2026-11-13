@@ -41,5 +41,5 @@ Monte as datas com offset explícito: `new Date('2026-11-13T17:00:00-03:00')`.
 - `chaveSistema('Clipp  Pró') === chaveSistema('clipp pro')`.
 
 ## Critérios de aceite
-- [ ] `npm test` passa limpo, sem acessar a rede nem precisar de `DISCORD_TOKEN`.
-- [ ] Linha "Rodar os testes: `npm test`" no `README.md`.
+- [x] `npm test` passa limpo, sem acessar a rede nem precisar de `DISCORD_TOKEN`.
+- [x] Linha "Rodar os testes: `npm test`" no `README.md`.

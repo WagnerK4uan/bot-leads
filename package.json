@@ -7,7 +7,8 @@
     "start": "node src/index.js",
     "setup": "node src/setup.js",
     "setup:dry": "node src/setup.js --dry-run",
-    "assets": "powershell -ExecutionPolicy Bypass -File tools/render-assets.ps1"
+    "assets": "powershell -ExecutionPolicy Bypass -File tools/render-assets.ps1",
+    "test": "node --test"
   },
   "license": "ISC",
   "type": "module",

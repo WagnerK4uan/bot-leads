@@ -31,5 +31,5 @@ Os botões usam `interaction.message.embeds[0]`, que é o embed **no momento do 
 - `thread.appliedTags` pode estar desatualizado no cache. Para o status, use `await thread.fetch()` antes de `statusDoPost`.
 
 ## Critérios de aceite
-- [ ] Duas contas clicando "Assumir" ao mesmo tempo: a primeira assume, a segunda recebe "Já assumida por…".
-- [ ] Aprovar duas vezes seguidas não duplica a mensagem de aprovação.
+- [x] Duas contas clicando "Assumir" ao mesmo tempo: a primeira assume, a segunda recebe "Já assumida por…".
+- [x] Aprovar duas vezes seguidas não duplica a mensagem de aprovação.

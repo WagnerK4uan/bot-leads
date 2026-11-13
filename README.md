@@ -3,7 +3,7 @@
 Organiza o servidor onde o **Comercial** pede e a **Importação** valida se dá para importar os dados do sistema antigo de um lead.
 
 - `/validacao` abre um formulário (Cliente, Sistema, Acesso, Dados, Observações) e cria um **post padronizado no fórum `#validacoes`** com status 🟡.
-- Botões no post (só Importação/Gestão): **🙋 Assumir**, **⏸️ Pausar / ▶️ Retomar** (só Importação; o tempo pausado não conta), **✅ Aprovar** (virada de chave + método), **❓ Pedir info**, **⛔ Reprovar**, **↩️ Reabrir**. Ao aprovar/reprovar, o "Tempo de validação" do post é contado em horas úteis desde que foi assumida, descontando as pausas — o mesmo número de `/relatorio` e `/metricas`. Quem assumiu continua como responsável mesmo que outra pessoa (ex.: a Gestão) aprove ou reprove; se ninguém assumiu, quem clicou vira o responsável.
+- Botões no post (só Importação/Gestão): **🙋 Assumir**, **⏸️ Pausar / ▶️ Retomar** (só Importação; o tempo pausado não conta), **✅ Aprovar** (virada de chave + método), **❓ Pedir info**, **⛔ Reprovar**, **↩️ Reabrir**. Ao aprovar/reprovar, o "Tempo de validação" do post é contado em horas úteis desde que foi assumida, descontando as pausas — o mesmo número de `/relatorio` e `/metricas`. Quem assumiu continua como responsável mesmo que outra pessoa (ex.: a Gestão) aprove ou reprove; se ninguém assumiu, quem clicou vira o responsável. Ações no mesmo post rodam uma de cada vez: se duas pessoas clicam juntas, só a primeira vale e a outra recebe um aviso ("Já assumida por…", "Este post já foi finalizado…").
 - O solicitante é mencionado em cada resposta; quando ele responde um post 🟠, o post volta sozinho para 🟡.
 - Lembrete automático para posts parados há mais de `SLA_HORAS` horas úteis (seg–sex, 8h–18h, fora os `FERIADOS`), enviado só dentro do expediente — o que vence à noite ou no fim de semana é cobrado na primeira varredura do próximo dia útil. Post com o tempo pausado há mais de `SLA_PAUSA_HORAS` horas úteis recebe um lembrete de pausa para o responsável.
 - `/pendentes` lista a fila em aberto.
@@ -54,6 +54,8 @@ Para refazer as mensagens fixas (ex.: depois de trocar imagens): `npm run setup 
 ```bash
 npm start
 ```
+
+Rodar os testes: `npm test` (funções de data/hora e leitura do embed; não precisa de `.env` nem de rede).
 
 ### Hospedagem
 - **Discloud**: compacte o projeto **sem** `node_modules` (com `.env`, `discloud.config`, `assets/`, `src/`, `package.json`) e envie pelo site ou `/upload` no bot da Discloud.
