@@ -80,3 +80,10 @@ test('comCampo remove com null e adiciona no fim', () => {
   assert.deepEqual(comCampo(base, 'X', null).data.fields.map((f) => f.name), ['A', 'B']);
   assert.deepEqual(comCampo(base, 'Z', '9').data.fields.map((f) => f.name), ['A', 'B', 'Z']);
 });
+
+test('botoes: aberto tem a linha do solicitante com Cancelar; finalizado só Reabrir', async () => {
+  const { botoes } = await import('../src/post.js');
+  const ids = (rows) => rows.map((r) => r.components.map((c) => c.data.custom_id));
+  assert.deepEqual(ids(botoes('aguardando'))[1], ['val:cancelar']);
+  for (const s of ['aprovado', 'reprovado', 'cancelado']) assert.deepEqual(ids(botoes(s)), [['val:reabrir']]);
+});

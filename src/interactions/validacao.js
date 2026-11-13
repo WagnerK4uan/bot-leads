@@ -72,6 +72,11 @@ const MODAIS = {
       .addLabelComponents(
         texto('motivo', 'O que está faltando?', { placeholder: 'Ex.: AnyDesk não conecta, preciso da senha do banco...' }),
       ),
+  cancelar: () =>
+    new ModalBuilder()
+      .setCustomId('valm:cancelar')
+      .setTitle('Cancelar pedido')
+      .addLabelComponents(texto('motivo', 'Motivo (opcional)', { required: false, placeholder: 'Ex.: Cliente desistiu' })),
 };
 
 async function starterDe(thread) {
@@ -104,7 +109,7 @@ async function estadoFresco(thread) {
   return { msg, embed: msg.embeds[0], status: statusDoPost(thread, thread.parent) };
 }
 
-const FINALIZADOS = ['aprovado', 'reprovado'];
+const FINALIZADOS = ['aprovado', 'reprovado', 'cancelado'];
 const msgFinalizado = (status) => `Este post já foi finalizado (${statusTexto(status)}). Use ↩️ Reabrir.`;
 
 /**
@@ -155,8 +160,16 @@ function avisarSolicitante(thread, embed, texto) {
   });
 }
 
+/** Solicitante do post ou Gestão (a Importação fecha pelo Reprovar). */
+const ehSolicitanteOuGestao = (interaction) =>
+  solicitanteDe(interaction.message.embeds[0] ?? {}) === interaction.user.id || hasRole(interaction.member, 'gestao');
+
 export async function onButton(interaction) {
   const acao = interaction.customId.split(':')[1];
+  if (acao === 'cancelar') {
+    if (!ehSolicitanteOuGestao(interaction)) return interaction.reply(efemero('Só quem abriu o pedido pode cancelar.'));
+    return interaction.showModal(MODAIS.cancelar());
+  }
   if ((acao === 'pausar' || acao === 'retomar') && !hasRole(interaction.member, 'importacao')) {
     return interaction.reply(efemero('Só o time de **Importação** pode pausar ou retomar o tempo.'));
   }
@@ -216,6 +229,7 @@ async function executarBotao(interaction, acao, thread) {
       [CAMPO.tempoLegado, null],
       [CAMPO.finalizada, null],
       [CAMPO.pausas, null],
+      [CAMPO.motivo, null],
     ]);
     await thread.setAutoArchiveDuration(10080);
     const importacao = findRole(interaction.guild, 'importacao');
@@ -303,6 +317,23 @@ async function executarModal(interaction, acao, thread) {
       `❓ ${u} precisa de mais informação:\n> ${motivo}\n\nResponda aqui no post — o status volta para ${statusTexto('analise')} automaticamente.`,
     );
     await registrarLog(interaction.guild, `🟠 **Pendente de info** ${thread} — ${u}: ${motivo}`);
+  } else if (acao === 'cancelar') {
+    const motivo = f.getTextInputValue('motivo')?.trim();
+    // Sem "Tempo de validação": cancelamento não entra nas métricas de análise.
+    const respId = responsavelDe(atual);
+    await atualizarPost(thread, msg, 'cancelado', [
+      [CAMPO.motivo, motivo ? `Cancelado: ${motivo}` : 'Cancelado'],
+      [CAMPO.finalizada, carimbo(new Date()), true],
+      [CAMPO.pausas, textoPausas(fecharPausa(pausasDe(atual)))],
+    ]);
+    await thread.send({
+      content: `⚪ ${u} cancelou o pedido.${motivo ? ` Motivo: ${motivo}` : ''}${respId ? ` <@${respId}>` : ''}
+
+Este post será arquivado após 24 h sem atividade.`,
+      allowedMentions: { users: respId ? [respId] : [] },
+    });
+    await thread.setAutoArchiveDuration(1440);
+    await registrarLog(interaction.guild, `⚪ **Cancelada** ${thread} — por ${u}${motivo ? `: ${motivo}` : ''}`);
   }
 }
 

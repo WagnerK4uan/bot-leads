@@ -108,7 +108,7 @@ export const fecharPausa = (pausas, quando = new Date()) =>
   pausas.map((p) => (p.fim === null ? { ...p, fim: quando } : p));
 
 export function botoes(status, pausado = false) {
-  const finalizado = status === 'aprovado' || status === 'reprovado';
+  const finalizado = status === 'aprovado' || status === 'reprovado' || status === 'cancelado';
   if (finalizado) {
     return [
       new ActionRowBuilder().addComponents(
@@ -130,6 +130,10 @@ export function botoes(status, pausado = false) {
       new ButtonBuilder().setCustomId('val:aprovar').setLabel('Aprovar').setEmoji('✅').setStyle(ButtonStyle.Success),
       new ButtonBuilder().setCustomId('val:info').setLabel('Pedir info').setEmoji('❓').setStyle(ButtonStyle.Primary),
       new ButtonBuilder().setCustomId('val:reprovar').setLabel('Reprovar').setEmoji('⛔').setStyle(ButtonStyle.Danger),
+    ),
+    // Ações do solicitante (a primeira linha já tem o máximo de 5 botões).
+    new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('val:cancelar').setLabel('Cancelar pedido').setEmoji('🚫').setStyle(ButtonStyle.Secondary),
     ),
   ];
 }

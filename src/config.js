@@ -62,6 +62,8 @@ export const STATUS = {
   aprovado: { tag: 'Aprovado', emoji: '🟢', color: 0x2ecc71, label: 'Aprovado' },
   reprovado: { tag: 'Reprovado', emoji: '🔴', color: 0xe74c3c, label: 'Reprovado' },
   info: { tag: 'Pendente de info', emoji: '🟠', color: 0xe67e22, label: 'Pendente de informação' },
+  // Fechado pelo Comercial (lead desistiu): não conta como aberto, aprovado nem reprovado.
+  cancelado: { tag: 'Cancelado', emoji: '⚪', color: 0x95a5a6, label: 'Cancelado' },
 };
 
 // Status que ainda dependem do time de importação (entram no lembrete e no /pendentes).
@@ -87,5 +89,5 @@ export const FORUM_GUIDELINES = [
   '➡️ Cada cliente = 1 post. Toda conversa sobre ele acontece DENTRO do post.',
   '➡️ Só suba ticket de importação depois que o post estiver 🟢 Aprovado.',
   '',
-  'Status: 🟡 Aguardando • 🔵 Em análise • 🟠 Pendente de info • 🟢 Aprovado • 🔴 Reprovado',
+  'Status: 🟡 Aguardando • 🔵 Em análise • 🟠 Pendente de info • 🟢 Aprovado • 🔴 Reprovado • ⚪ Cancelado',
 ].join('\n');

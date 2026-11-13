@@ -129,6 +129,7 @@ export function regras(guild) {
               '3. 🟢 Aprovado → comercial sobe o ticket de importação',
               '   🟠 Pendente de info → comercial responde no post e volta para 🔵',
               '   🔴 Reprovado → não sobe ticket; alinhar com o cliente',
+              '   ⚪ Cancelado → o lead desistiu; quem abriu o pedido usa 🚫 Cancelar pedido',
             ].join('\n'),
           },
           {

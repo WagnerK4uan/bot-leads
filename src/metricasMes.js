@@ -52,7 +52,12 @@ export function calcularMes(registros, chave) {
     .filter((r) => STATUS_ABERTOS.includes(r.status) && chaveMes(r.criadoEm) <= chave)
     .sort((a, b) => a.criadoEm - b.criadoEm);
 
+  const canceladas = registros.filter(
+    (r) => r.status === 'cancelado' && r.finalizadaEm && chaveMes(r.finalizadaEm) === chave,
+  ).length;
+
   return {
+    canceladas,
     aprovadas: finalizadas.filter((r) => r.status === 'aprovado').length,
     reprovadas: finalizadas.filter((r) => r.status === 'reprovado').length,
     mediaAnalise: media(tempos),
@@ -71,7 +76,12 @@ export function montarEmbedMes(m, chave) {
   embed.addFields(
     { name: 'Aprovadas', value: `🟢 **${m.aprovadas}**`, inline: true },
     { name: 'Reprovadas', value: `🔴 **${m.reprovadas}**`, inline: true },
-    { name: 'Total finalizadas', value: `**${total}**`, inline: true },
+    {
+      name: 'Total finalizadas',
+      value: `**${total}**${m.canceladas ? `
+⚪ ${m.canceladas} cancelada(s), fora do total` : ''}`,
+      inline: true,
+    },
     {
       name: 'Tempo médio de análise',
       value: `**${fmtHoras(m.mediaAnalise)}**${m.semTempo ? `\n_${m.semTempo} sem horário de assumida, fora da média_` : ''}`,
