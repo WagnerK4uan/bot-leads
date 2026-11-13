@@ -34,11 +34,12 @@ const campo = (embed, nome) => embed.fields?.find((f) => f.name === nome)?.value
 function lerEmbed(embed) {
   const sistema = campo(embed, CAMPO.sistema);
   const assumida = assumidaEm(embed);
-  const tempoMin = Number((campo(embed, CAMPO.tempo) ?? campo(embed, CAMPO.tempoLegado))?.match(/(\d+)\s*min/)?.[1]);
-  // Posts aprovados antes do campo "Finalizada em" só têm o tempo (com o nome antigo "Tempo até aprovação").
+  // Posts aprovados antes do campo "Finalizada em" só têm o tempo de relógio, no campo antigo
+  // "Tempo até aprovação" ("N min"). Posts novos sempre têm "Finalizada em" e o tempo em horas úteis.
+  const finalizadaCampo = dataDoCampo(embed, CAMPO.finalizada);
+  const tempoMin = finalizadaCampo ? NaN : Number(campo(embed, CAMPO.tempoLegado)?.match(/(\d+)\s*min/)?.[1]);
   const finalizada =
-    dataDoCampo(embed, CAMPO.finalizada) ??
-    (assumida && Number.isFinite(tempoMin) ? new Date(assumida.getTime() + tempoMin * 60_000) : null);
+    finalizadaCampo ?? (assumida && Number.isFinite(tempoMin) ? new Date(assumida.getTime() + tempoMin * 60_000) : null);
   return {
     cliente: campo(embed, CAMPO.cliente),
     sistema,

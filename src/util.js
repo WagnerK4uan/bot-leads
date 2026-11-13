@@ -83,6 +83,16 @@ export function horasUteisSemPausa(inicio, fim, pausas = []) {
   return Math.max(0, horasUteis(inicio, fim) - pausado);
 }
 
+/** "35 min úteis", "2 h úteis", "2 h 10 min úteis" ou "menos de 5 min úteis". */
+export function fmtDuracaoUtil(horas) {
+  if (horas < 5 / 60) return 'menos de 5 min úteis';
+  const total = Math.round(horas * 60);
+  const h = Math.floor(total / 60);
+  const min = total % 60;
+  if (!h) return `${min} min úteis`;
+  return min ? `${h} h ${min} min úteis` : `${h} h úteis`;
+}
+
 export function idade(date) {
   const min = Math.floor((Date.now() - date.getTime()) / 60000);
   if (min < 60) return `${min} min`;

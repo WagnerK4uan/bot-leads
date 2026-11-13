@@ -103,10 +103,6 @@ export function textoPausas(pausas) {
     .join('\n');
 }
 
-/** Minutos de relógio pausados; pausa aberta conta até `ate`. */
-export const minutosPausados = (pausas, ate = new Date()) =>
-  pausas.reduce((s, p) => s + Math.max(0, ((p.fim ?? ate).getTime() - p.inicio.getTime()) / 60000), 0);
-
 /** Fecha a pausa aberta (se houver) em `quando`. */
 export const fecharPausa = (pausas, quando = new Date()) =>
   pausas.map((p) => (p.fim === null ? { ...p, fim: quando } : p));

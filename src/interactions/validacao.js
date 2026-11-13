@@ -17,14 +17,13 @@ import {
   comStatus,
   emPausa,
   fecharPausa,
-  minutosPausados,
   pausasDe,
   responsavelDe,
   solicitanteDe,
   statusTexto,
   textoPausas,
 } from '../post.js';
-import { efemero, findRole, hasRole, setStatus, statusDoPost } from '../util.js';
+import { efemero, findRole, fmtDuracaoUtil, hasRole, horasUteisSemPausa, setStatus, statusDoPost } from '../util.js';
 
 const texto = (id, label, { required = true, placeholder, short = false, description } = {}) => {
   const l = new LabelBuilder().setLabel(label).setTextInputComponent(
@@ -81,17 +80,20 @@ async function starterDe(thread) {
 }
 
 /**
- * Início ("Assumida em", ou agora se ninguém assumiu), pausas (a aberta é fechada agora) e minutos
- * até agora descontando as pausas, para aprovar/reprovar.
+ * Início ("Assumida em", ou agora se ninguém assumiu), pausas (a aberta é fechada agora) e horas
+ * úteis até agora descontando as pausas — o mesmo cálculo de /relatorio e /metricas.
  */
 async function tempoDesdeAssumida(interaction, thread) {
   const embed = (interaction.message ?? (await starterDe(thread))).embeds[0];
   const agora = new Date();
   const inicio = assumidaEm(embed) ?? agora;
   const pausas = fecharPausa(pausasDe(embed), agora);
-  const min = Math.max(0, (agora.getTime() - inicio.getTime()) / 60000 - minutosPausados(pausas, agora));
-  return { inicio, pausas, tempo: `${Math.round(min)} min` };
+  const horas = horasUteisSemPausa(inicio, agora, pausas);
+  return { embed, inicio, pausas, tempo: fmtDuracaoUtil(horas) };
 }
+
+/** "por @X" no log, e "(responsável: @Y)" quando quem finalizou não é o responsável. */
+const porQuem = (u, respId) => `por ${u}${respId !== u.id ? ` (responsável: <@${respId}>)` : ''}`;
 
 /** Aplica status + campos no post e devolve o embed atualizado. */
 async function atualizarPost(interaction, status, campos) {
@@ -184,9 +186,11 @@ export async function onModal(interaction) {
     const virada = f.getStringSelectValues('virada')[0];
     const metodo = f.getTextInputValue('metodo').trim();
     const obs = f.getTextInputValue('obs')?.trim();
-    const { inicio, pausas, tempo } = await tempoDesdeAssumida(interaction, thread);
+    const { embed: atual, inicio, pausas, tempo } = await tempoDesdeAssumida(interaction, thread);
+    // Quem assumiu continua responsável (crédito e tempo nas métricas); sem responsável, quem clicou assume.
+    const respId = responsavelDe(atual) ?? u.id;
     const embed = await atualizarPost(interaction, 'aprovado', [
-      [CAMPO.responsavel, `${u}`, true],
+      [CAMPO.responsavel, `<@${respId}>`, true],
       [CAMPO.assumida, carimbo(inicio), true],
       [CAMPO.virada, virada, true],
       [CAMPO.metodo, metodo],
@@ -199,15 +203,16 @@ export async function onModal(interaction) {
     await avisarSolicitante(
       thread,
       embed,
-      `✅ **Validação aprovada** por ${u}.\n**Virada de chave:** ${virada}\n**Método:** ${metodo}${obs ? `\n**Ressalvas:** ${obs}` : ''}\n**Tempo desde que foi assumida:** ${tempo}\n\nPode subir o ticket de importação. Este post será arquivado após 24 h sem atividade.`,
+      `✅ **Validação aprovada** por ${u}.\n**Virada de chave:** ${virada}\n**Método:** ${metodo}${obs ? `\n**Ressalvas:** ${obs}` : ''}\n**Tempo desde que foi assumida (horas úteis):** ${tempo}\n\nPode subir o ticket de importação. Este post será arquivado após 24 h sem atividade.`,
     );
     await thread.setAutoArchiveDuration(1440);
-    await registrarLog(interaction.guild, `🟢 **Aprovada** ${thread} — por ${u} (${tempo} desde assumida)`);
+    await registrarLog(interaction.guild, `🟢 **Aprovada** ${thread} — ${porQuem(u, respId)} (${tempo} desde assumida)`);
   } else if (acao === 'reprovar') {
     const motivo = f.getTextInputValue('motivo').trim();
-    const { inicio, pausas, tempo } = await tempoDesdeAssumida(interaction, thread);
+    const { embed: atual, inicio, pausas, tempo } = await tempoDesdeAssumida(interaction, thread);
+    const respId = responsavelDe(atual) ?? u.id;
     const embed = await atualizarPost(interaction, 'reprovado', [
-      [CAMPO.responsavel, `${u}`, true],
+      [CAMPO.responsavel, `<@${respId}>`, true],
       [CAMPO.assumida, carimbo(inicio), true],
       [CAMPO.motivo, motivo],
       [CAMPO.tempo, tempo, true],
@@ -218,10 +223,10 @@ export async function onModal(interaction) {
     await avisarSolicitante(
       thread,
       embed,
-      `⛔ **Validação reprovada** por ${u}.\n**Motivo:** ${motivo}\n**Tempo desde que foi assumida:** ${tempo}\n\nNão suba ticket de importação para este cliente.`,
+      `⛔ **Validação reprovada** por ${u}.\n**Motivo:** ${motivo}\n**Tempo desde que foi assumida (horas úteis):** ${tempo}\n\nNão suba ticket de importação para este cliente.`,
     );
     await thread.setAutoArchiveDuration(1440);
-    await registrarLog(interaction.guild, `🔴 **Reprovada** ${thread} — por ${u} (${tempo} desde assumida): ${motivo}`);
+    await registrarLog(interaction.guild, `🔴 **Reprovada** ${thread} — ${porQuem(u, respId)} (${tempo} desde assumida): ${motivo}`);
   } else if (acao === 'info') {
     const motivo = f.getTextInputValue('motivo').trim();
     // Pedir info conta como assumir: mantém o responsável e o início do tempo, ou assume agora.
