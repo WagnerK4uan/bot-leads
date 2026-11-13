@@ -81,3 +81,18 @@ test('temCargo ignora Administrador; hasRole não', async () => {
   assert.equal(temCargo(membro(false, 'Importação'), 'importacao'), true);
   assert.equal(temCargo(membro(false, 'Comercial'), 'importacao', 'gestao'), false);
 });
+
+test('podeResponder: solicitante, colega do Comercial ou Gestão; nunca a Importação', async () => {
+  const { podeResponder } = await import('../src/interactions/validacao.js');
+  const membro = (id, admin, ...nomes) => ({
+    id,
+    permissions: { has: () => admin },
+    roles: { cache: nomes.map((name) => ({ name })) },
+  });
+  assert.equal(podeResponder(membro('1', false), '1'), true);
+  assert.equal(podeResponder(membro('2', false, 'Comercial'), '1'), true);
+  assert.equal(podeResponder(membro('3', false, 'Gestão'), '1'), true);
+  assert.equal(podeResponder(membro('4', false, 'Importação'), '1'), false);
+  assert.equal(podeResponder(membro('5', true, 'Importação', 'Gestão'), '1'), false);
+  assert.equal(podeResponder(membro('6', true), '1'), false);
+});

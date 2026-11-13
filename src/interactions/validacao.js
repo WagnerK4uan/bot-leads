@@ -34,6 +34,7 @@ import {
   horasUteisSemPausa,
   setStatus,
   setTagsDeDados,
+  temCargo,
   statusDoPost,
 } from '../util.js';
 
@@ -432,7 +433,14 @@ async function editarPedido(interaction, thread, msg, atual, status) {
 }
 
 /**
- * Quando o solicitante responde um post 🟠, devolve para 🔵 Em análise com o mesmo responsável.
+ * Quem pode tirar um post do 🟠 respondendo: o solicitante, ou alguém do Comercial/Gestão que não seja da
+ * Importação (colega cobrindo férias). temCargo, não hasRole: um admin da Importação não pode contar como resposta.
+ */
+export const podeResponder = (member, solicitanteId) =>
+  member.id === solicitanteId || (temCargo(member, 'comercial', 'gestao') && !temCargo(member, 'importacao'));
+
+/**
+ * Quando o Comercial responde um post 🟠, devolve para 🔵 Em análise com o mesmo responsável.
  * Posts sem responsável (de antes dessa regra) voltam para a fila da Importação.
  */
 export async function onThreadMessage(message) {
@@ -444,7 +452,9 @@ export async function onThreadMessage(message) {
 
 async function voltarParaAnalise(message, thread) {
   const { msg, embed: atual, status: statusAtual } = await estadoFresco(thread).catch(() => ({}));
-  if (statusAtual !== 'info' || solicitanteDe(atual) !== message.author.id) return;
+  if (statusAtual !== 'info') return;
+  const member = message.member ?? (await message.guild.members.fetch(message.author.id).catch(() => null));
+  if (!member || !podeResponder(member, solicitanteDe(atual))) return;
   await voltarDeInfo(thread, msg, atual, message.author);
 }
 

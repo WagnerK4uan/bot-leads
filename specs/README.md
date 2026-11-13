@@ -21,7 +21,7 @@ As specs ficam em `pendentes/` até serem implementadas; ao finalizar uma, ela �
 | 12 | [Transferir responsável](concluidas/12-transferir-responsavel.md) | Funcionalidade | M | 08 |
 | 13 | [Aviso de cliente duplicado](concluidas/13-aviso-duplicidade.md) | Funcionalidade | P | — |
 | 14 | [Motivo de reprovação por categoria](concluidas/14-motivo-reprovacao-categorizado.md) | Funcionalidade | M | — |
-| 15 | [Qualquer pessoa do Comercial responde o 🟠](pendentes/15-resposta-de-qualquer-comercial.md) | Funcionalidade | P | 11 |
+| 15 | [Qualquer pessoa do Comercial responde o 🟠](concluidas/15-resposta-de-qualquer-comercial.md) | Funcionalidade | P | 11 |
 | 16 | [Comando /minhas](pendentes/16-comando-minhas.md) | Funcionalidade | M | — |
 
 Tamanho: P = até ~30 linhas, M = ~30–100, G = mais de 100.
