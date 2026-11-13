@@ -90,7 +90,7 @@ export function tutorial(guild) {
           [
             'Alguém da Importação clica em **🙋 Assumir**, acessa o PC do cliente e responde com:',
             '✅ **Aprovar** — informa se dá para fazer a virada de chave e o método de importação',
-            '❓ **Pedir info** — falta algo; o comercial responde no post e ele volta para a fila',
+            '❓ **Pedir info** — falta algo; o comercial responde no post e ele volta para 🔵 com o mesmo responsável',
             '⛔ **Reprovar** — com o motivo',
             '',
             'Quem abriu o pedido é mencionado em cada resposta. **Só suba o ticket de importação com 🟢 Aprovado.**',
@@ -127,7 +127,7 @@ export function regras(guild) {
               `1. Comercial usa \`/validacao\` → artigo criado em ${ch(guild, 'forum')} (🟡)`,
               '2. Importação assume (🔵), acessa o cliente e responde',
               '3. 🟢 Aprovado → comercial sobe o ticket de importação',
-              '   🟠 Pendente de info → comercial responde no post',
+              '   🟠 Pendente de info → comercial responde no post e volta para 🔵',
               '   🔴 Reprovado → não sobe ticket; alinhar com o cliente',
             ].join('\n'),
           },

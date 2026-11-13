@@ -8,7 +8,7 @@ import {
 import { STATUS } from '../config.js';
 import { registrarLog } from '../log.js';
 import { invalidar } from '../historico.js';
-import { CAMPO, assumidaEm, botoes, carimbo, comCampo, comStatus, solicitanteDe, statusTexto } from '../post.js';
+import { CAMPO, assumidaEm, botoes, carimbo, comCampo, comStatus, responsavelDe, solicitanteDe, statusTexto } from '../post.js';
 import { efemero, findRole, hasRole, setStatus, statusDoPost } from '../util.js';
 
 const texto = (id, label, { required = true, placeholder, short = false, description } = {}) => {
@@ -179,30 +179,50 @@ export async function onModal(interaction) {
     await registrarLog(interaction.guild, `🔴 **Reprovada** ${thread} — por ${u} (${tempo} desde assumida): ${motivo}`);
   } else if (acao === 'info') {
     const motivo = f.getTextInputValue('motivo').trim();
-    const embed = await atualizarPost(interaction, 'info', [[CAMPO.motivo, `Pendente: ${motivo}`]]);
+    // Pedir info conta como assumir: mantém o responsável e o início do tempo, ou assume agora.
+    const atual = (interaction.message ?? (await starterDe(thread))).embeds[0];
+    const responsavelId = responsavelDe(atual);
+    const embed = await atualizarPost(interaction, 'info', [
+      [CAMPO.responsavel, responsavelId ? `<@${responsavelId}>` : `${u}`, true],
+      [CAMPO.assumida, carimbo(assumidaEm(atual) ?? new Date()), true],
+      [CAMPO.motivo, `Pendente: ${motivo}`],
+    ]);
     await avisarSolicitante(
       thread,
       embed,
-      `❓ ${u} precisa de mais informação:\n> ${motivo}\n\nResponda aqui no post — o status volta para ${statusTexto('aguardando')} automaticamente.`,
+      `❓ ${u} precisa de mais informação:\n> ${motivo}\n\nResponda aqui no post — o status volta para ${statusTexto('analise')} automaticamente.`,
     );
     await registrarLog(interaction.guild, `🟠 **Pendente de info** ${thread} — ${u}: ${motivo}`);
   }
 }
 
-/** Quando o solicitante responde um post 🟠, devolve para a fila da Importação. */
+/**
+ * Quando o solicitante responde um post 🟠, devolve para 🔵 Em análise com o mesmo responsável.
+ * Posts sem responsável (de antes dessa regra) voltam para a fila da Importação.
+ */
 export async function onThreadMessage(message) {
   const thread = message.channel;
   if (statusDoPost(thread, thread.parent) !== 'info') return;
   const msg = await starterDe(thread).catch(() => null);
   if (!msg || solicitanteDe(msg.embeds[0]) !== message.author.id) return;
 
-  const embed = comCampo(comStatus(msg.embeds[0], 'aguardando'), CAMPO.motivo, null);
-  await setStatus(thread, thread.parent, 'aguardando');
-  await msg.edit({ embeds: [embed], components: botoes('aguardando') });
+  const responsavelId = responsavelDe(msg.embeds[0]);
+  const status = responsavelId ? 'analise' : 'aguardando';
+  const embed = comCampo(comStatus(msg.embeds[0], status), CAMPO.motivo, null);
+  await setStatus(thread, thread.parent, status);
+  await msg.edit({ embeds: [embed], components: botoes(status) });
   invalidar(thread.id);
+
+  if (responsavelId) {
+    await thread.send({
+      content: `🔄 ${message.author} respondeu. Voltou para ${statusTexto(status)} <@${responsavelId}>`,
+      allowedMentions: { users: [responsavelId] },
+    });
+    return;
+  }
   const importacao = findRole(message.guild, 'importacao');
   await thread.send({
-    content: `🔄 ${message.author} respondeu. Voltou para ${statusTexto('aguardando')} ${importacao ?? ''}`,
+    content: `🔄 ${message.author} respondeu. Voltou para ${statusTexto(status)} ${importacao ?? ''}`,
     allowedMentions: { roles: importacao ? [importacao.id] : [] },
   });
 }
