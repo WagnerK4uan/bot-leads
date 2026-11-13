@@ -1,6 +1,6 @@
 import { EmbedBuilder, MessageFlags, SlashCommandBuilder } from 'discord.js';
 import { STATUS, STATUS_ABERTOS } from '../config.js';
-import { efemero, findForum, hasRole, idade, statusDoPost } from '../util.js';
+import { efemero, findForum, hasRole, idade, limitarLinhas, statusDoPost } from '../util.js';
 
 export const data = new SlashCommandBuilder()
   .setName('pendentes')
@@ -28,14 +28,7 @@ export async function execute(interaction) {
   if (!posts.length) return interaction.editReply('🎉 Nenhuma validação pendente.');
 
   const linhas = posts.map(({ thread, status }) => `${STATUS[status].emoji} ${thread} — aberto há ${idade(thread.createdAt)}`);
-  let desc = '';
-  for (const l of linhas) {
-    if (desc.length + l.length > 3900) {
-      desc += `\n… e mais ${linhas.length - desc.split('\n').length}`;
-      break;
-    }
-    desc += (desc ? '\n' : '') + l;
-  }
+  const desc = limitarLinhas(linhas);
   const contagem = STATUS_ABERTOS.map((k) => `${STATUS[k].emoji} ${posts.filter((p) => p.status === k).length}`).join('  ');
 
   await interaction.editReply({

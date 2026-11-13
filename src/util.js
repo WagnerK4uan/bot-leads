@@ -117,3 +117,13 @@ export function idade(date) {
   if (h < 24) return `${h} h`;
   return `${Math.floor(h / 24)} d ${h % 24} h`;
 }
+
+/** Junta as linhas até `max` caracteres (o embed aceita 4096) e resume o resto em "… e mais N". */
+export function limitarLinhas(linhas, max = 3900) {
+  let desc = '';
+  for (const [i, l] of linhas.entries()) {
+    if (desc.length + l.length + 1 > max) return `${desc}\n… e mais ${linhas.length - i}`;
+    desc += (desc ? '\n' : '') + l;
+  }
+  return desc;
+}

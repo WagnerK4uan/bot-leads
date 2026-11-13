@@ -3,6 +3,7 @@ import { Client, Events, GatewayIntentBits, Partials } from 'discord.js';
 import { env } from './config.js';
 import * as historico from './commands/historico.js';
 import * as metricas from './commands/metricas.js';
+import * as minhas from './commands/minhas.js';
 import * as pendentes from './commands/pendentes.js';
 import * as relatorio from './commands/relatorio.js';
 import * as transferir from './commands/transferir.js';
@@ -15,7 +16,7 @@ import { agendarResumo } from './jobs/resumoSemanal.js';
 import { efemero, findForum } from './util.js';
 import { onMemberJoin, onSetorButton } from './welcome.js';
 
-export const COMANDOS = [validacao, pendentes, relatorio, historico, metricas, transferir];
+export const COMANDOS = [validacao, pendentes, minhas, relatorio, historico, metricas, transferir];
 
 if (!env.token || !env.guildId) {
   console.error('Configure DISCORD_TOKEN e GUILD_ID no arquivo .env (veja .env.example).');
