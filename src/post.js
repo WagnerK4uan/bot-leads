@@ -14,7 +14,8 @@ export const CAMPO = {
   metodo: 'Método de importação',
   motivo: 'Motivo',
   assumida: 'Assumida em',
-  tempo: 'Tempo até aprovação',
+  tempo: 'Tempo de validação',
+  tempoLegado: 'Tempo até aprovação', // nome antigo do campo, ainda presente em posts aprovados antes da troca
   finalizada: 'Finalizada em',
 };
 

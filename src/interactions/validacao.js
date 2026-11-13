@@ -65,6 +65,12 @@ async function starterDe(thread) {
   return msg;
 }
 
+/** Início ("Assumida em", ou agora se ninguém assumiu) e minutos até agora, para aprovar/reprovar. */
+async function tempoDesdeAssumida(interaction, thread) {
+  const inicio = assumidaEm((interaction.message ?? (await starterDe(thread))).embeds[0]) ?? new Date();
+  return { inicio, tempo: `${Math.round((Date.now() - inicio.getTime()) / 60000)} min` };
+}
+
 /** Aplica status + campos no post e devolve o embed atualizado. */
 async function atualizarPost(interaction, status, campos) {
   const thread = interaction.channel;
@@ -112,6 +118,7 @@ export async function onButton(interaction) {
       [CAMPO.responsavel, null],
       [CAMPO.assumida, null],
       [CAMPO.tempo, null],
+      [CAMPO.tempoLegado, null],
       [CAMPO.finalizada, null],
     ]);
     await thread.setAutoArchiveDuration(10080);
@@ -134,8 +141,7 @@ export async function onModal(interaction) {
     const virada = f.getStringSelectValues('virada')[0];
     const metodo = f.getTextInputValue('metodo').trim();
     const obs = f.getTextInputValue('obs')?.trim();
-    const inicio = assumidaEm((interaction.message ?? (await starterDe(thread))).embeds[0]) ?? new Date();
-    const tempo = `${Math.round((Date.now() - inicio.getTime()) / 60000)} min`;
+    const { inicio, tempo } = await tempoDesdeAssumida(interaction, thread);
     const embed = await atualizarPost(interaction, 'aprovado', [
       [CAMPO.responsavel, `${u}`, true],
       [CAMPO.assumida, carimbo(inicio), true],
@@ -143,6 +149,7 @@ export async function onModal(interaction) {
       [CAMPO.metodo, metodo],
       [CAMPO.motivo, obs ? `Ressalvas: ${obs}` : null],
       [CAMPO.tempo, tempo, true],
+      [CAMPO.tempoLegado, null],
       [CAMPO.finalizada, carimbo(new Date()), true],
     ]);
     await avisarSolicitante(
@@ -154,14 +161,22 @@ export async function onModal(interaction) {
     await registrarLog(interaction.guild, `🟢 **Aprovada** ${thread} — por ${u} (${tempo} desde assumida)`);
   } else if (acao === 'reprovar') {
     const motivo = f.getTextInputValue('motivo').trim();
+    const { inicio, tempo } = await tempoDesdeAssumida(interaction, thread);
     const embed = await atualizarPost(interaction, 'reprovado', [
       [CAMPO.responsavel, `${u}`, true],
+      [CAMPO.assumida, carimbo(inicio), true],
       [CAMPO.motivo, motivo],
+      [CAMPO.tempo, tempo, true],
+      [CAMPO.tempoLegado, null],
       [CAMPO.finalizada, carimbo(new Date()), true],
     ]);
-    await avisarSolicitante(thread, embed, `⛔ **Validação reprovada** por ${u}.\n**Motivo:** ${motivo}\n\nNão suba ticket de importação para este cliente.`);
+    await avisarSolicitante(
+      thread,
+      embed,
+      `⛔ **Validação reprovada** por ${u}.\n**Motivo:** ${motivo}\n**Tempo desde que foi assumida:** ${tempo}\n\nNão suba ticket de importação para este cliente.`,
+    );
     await thread.setAutoArchiveDuration(1440);
-    await registrarLog(interaction.guild, `🔴 **Reprovada** ${thread} — por ${u}: ${motivo}`);
+    await registrarLog(interaction.guild, `🔴 **Reprovada** ${thread} — por ${u} (${tempo} desde assumida): ${motivo}`);
   } else if (acao === 'info') {
     const motivo = f.getTextInputValue('motivo').trim();
     const embed = await atualizarPost(interaction, 'info', [[CAMPO.motivo, `Pendente: ${motivo}`]]);
