@@ -114,3 +114,11 @@ test('botoes: Editar aparece em 🟡 e 🟠, não em 🔵', async () => {
   assert.deepEqual(linha2('info'), ['val:editar', 'val:cancelar']);
   assert.deepEqual(linha2('analise'), ['val:cancelar']);
 });
+
+test('botoes: Assumir só fica habilitado em 🟡 (🔵 e 🟠 já têm responsável)', async () => {
+  const { botoes } = await import('../src/post.js');
+  const assumir = (s) => botoes(s)[0].components.find((c) => c.data.custom_id === 'val:assumir').data.disabled ?? false;
+  assert.equal(assumir('aguardando'), false);
+  assert.equal(assumir('analise'), true);
+  assert.equal(assumir('info'), true);
+});

@@ -134,7 +134,7 @@ export function botoes(status, pausado = false) {
   }
   return [
     new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('val:assumir').setLabel('Assumir').setEmoji('🙋').setStyle(ButtonStyle.Secondary).setDisabled(status === 'analise'),
+      new ButtonBuilder().setCustomId('val:assumir').setLabel('Assumir').setEmoji('🙋').setStyle(ButtonStyle.Secondary).setDisabled(status === 'analise' || status === 'info'),
       pausado
         ? new ButtonBuilder().setCustomId('val:retomar').setLabel('Retomar').setEmoji('▶️').setStyle(ButtonStyle.Success)
         : new ButtonBuilder()

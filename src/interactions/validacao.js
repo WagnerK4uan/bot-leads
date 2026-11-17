@@ -229,7 +229,10 @@ async function executarBotao(interaction, acao, thread) {
 
   if (acao === 'assumir') {
     const respId = responsavelDe(atual);
-    if (status === 'analise' && respId) return avisar(interaction, `Já assumida por <@${respId}>.`);
+    // 🟠 também tem dono: só o /transferir troca. Posts 🟠 antigos ainda têm o botão habilitado.
+    if (respId && (status === 'analise' || status === 'info')) {
+      return avisar(interaction, `Já assumida por <@${respId}>. Use \`/transferir\` para passar para outra pessoa.`);
+    }
     const desde = assumidaEm(atual) ?? new Date();
     await atualizarPost(thread, msg, 'analise', [
       [CAMPO.responsavel, `${u}`, true],

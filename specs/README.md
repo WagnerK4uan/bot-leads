@@ -23,6 +23,7 @@ As specs ficam em `pendentes/` até serem implementadas; ao finalizar uma, ela �
 | 14 | [Motivo de reprovação por categoria](concluidas/14-motivo-reprovacao-categorizado.md) | Funcionalidade | M | — |
 | 15 | [Qualquer pessoa do Comercial responde o 🟠](concluidas/15-resposta-de-qualquer-comercial.md) | Funcionalidade | P | 11 |
 | 16 | [Comando /minhas](concluidas/16-comando-minhas.md) | Funcionalidade | M | — |
+| 17 | [🟠 não libera o Assumir](concluidas/17-assumir-bloqueado-em-info.md) | Correção | P | 04, 12 |
 
 Tamanho: P = até ~30 linhas, M = ~30–100, G = mais de 100.
 
